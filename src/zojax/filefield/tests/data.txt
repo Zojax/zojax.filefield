@@ -1,0 +1,325 @@
+===========
+File Object
+===========
+
+Internal representation of file/image field data
+
+  >>> from zojax.filefield.data import File
+  >>> f = File()
+
+The object provides a limited number of data attributes.  The
+`mimeType` attribute is used to store the preferred MIME
+content-type value for the data:
+
+  >>> f.mimeType
+  u''
+
+  >>> f.mimeType = "text/plain"
+  >>> f.mimeType
+  'text/plain'
+
+File objects also sport a `size` attribute that provides the number of
+bytes in the file:
+
+  >>> f.size
+  0
+
+The object supports efficient upload and download by providing all
+access to content data through accessor objects that provide (subsets
+of) Python's file API.
+
+A file that hasn't been written to is empty.  We can get a reader by calling
+`open()`. Note that all blobs are binary, thus the mode always contains a
+'b':
+
+  >>> r = f.open("r")
+  >>> r.mode
+  'rb'
+
+The `read()` method can be called with a non-negative integer argument
+to specify how many bytes to read, or with a negative or omitted
+argument to read to the end of the file:
+
+  >>> r.read(10)
+  ''
+  >>> r.read()
+  ''
+  >>> r.read(-1)
+  ''
+
+Once the accessor has been closed, we can no longer read from it:
+
+  >>> r.close()
+  >>> r.read()
+  Traceback (most recent call last):
+  ValueError: I/O operation on closed file
+
+We'll see that readers are more interesting once there's data in the
+file object.
+
+Data is added by using a writer, which is also created using the
+`open()` method on the file, but requesting a write file mode:
+
+  >>> w = f.open("w")
+  >>> w.mode
+  'wb'
+
+The `write()` method is used to add data to the file, but note that
+the data may be buffered in the writer:
+
+  >>> w.write("some text ")
+  >>> w.write("more text")
+
+The `flush()` method ensure that the data written so far is written to
+the file object:
+
+  >>> w.flush()
+
+We need to close the file first before determining its file size
+
+  >>> w.close()
+  >>> f.size
+  19
+
+We can now use a reader to see that the data has been written to the
+file:
+
+  >>> w = f.open("w")
+  >>> w.write('some text more text')
+  >>> w.write(" still more")
+  >>> w.close()
+  >>> f.size
+  30
+
+  >>> len(f)
+  30
+
+Now create a new reader and let's perform some seek operations.
+
+  >>> r = f.open()
+
+The reader also has a `seek()` method that can be used to back up or
+skip forward in the data stream.  Simply passing an offset argument,
+we see that the current position is moved to that offset from the
+start of the file:
+
+  >>> r.seek(20)
+  >>> r.read()
+  'still more'
+
+That's equivalent to passing 0 as the `whence` argument:
+
+  >>> r.seek(20, 0)
+  >>> r.read()
+  'still more'
+
+We can skip backward and forward relative to the current position by
+passing 1 for `whence`:
+
+  >>> r.seek(-10, 1)
+  >>> r.read(5)
+  'still'
+  >>> r.seek(2, 1)
+  >>> r.read()
+  'ore'
+
+We can skip to some position backward from the end of the file using
+the value 2 for `whence`:
+
+  >>> r.seek(-10, 2)
+  >>> r.read()
+  'still more'
+
+  >>> r.seek(0)
+  >>> r.seek(-4, 2)
+  >>> r.read()
+  'more'
+
+  >>> r.close()
+
+We can get all file contents
+
+  >>> f.data
+  'some text more text still more'
+
+Attempting to write to a closed writer raises an exception:
+
+  >>> w = f.open('w')
+  >>> w.close()
+
+  >>> w.write('foobar')
+  Traceback (most recent call last):
+  ValueError: I/O operation on closed file
+
+Similarly, using `seek()` or `tell()` on a closed reader raises an
+exception:
+
+  >>> r.close()
+  >>> r.seek(0)
+  Traceback (most recent call last):
+  ValueError: I/O operation on closed file
+
+  >>> r.tell()
+  Traceback (most recent call last):
+  ValueError: I/O operation on closed file
+
+We can clear all data
+
+  >>> f.clear()
+  >>> f.mimeType
+  u''
+  >>> f.data
+  ''
+  >>> f.size
+  0
+
+hash
+
+  >>> import md5
+
+  >>> f.data = 'some text'
+  >>> f.hash == md5.md5('some text').hexdigest()
+  True
+
+  >>> del f.hash
+
+  >>> f.hash == md5.md5('some text').hexdigest()
+  True
+
+File objects also have a hook for python's "deepcopy" function to implement
+proper copying:
+
+  >>> f2 = deepcopy(f)
+  >>> f2.data == f.data
+  True
+  >>> f2.size == f.size
+  True
+  >>> f2.hash == f.hash
+  True
+  >>> f2.filename == f.filename
+  True
+  >>> f2.mimeType == f.mimeType
+  True
+
+
+============
+Image Object
+============
+
+Only difference with File object, image tries calculate image dimension.
+
+  >>> import os.path
+  >>> from zojax.filefield.data import Image
+  >>> i = Image()
+
+  >>> i.width, i.height
+  (-1, -1)
+
+  >>> i.data = "some text "
+  >>> i.width, i.height
+  (-1, -1)
+
+  >>> i.data
+  'some text '
+
+If we assign image data directly to 'data' attribute, dimension
+calculates automaticly
+
+  >>> from zojax.filefield.tests import tests
+  >>> filePath = os.path.join(os.path.split(tests.__file__)[0], 'image.gif')
+
+  >>> i.data = open(filePath, 'rb').read()
+  >>> i.width, i.height
+  (16, 16)
+
+But if you load data with open('wb').write() you should call
+`updateDimension` after write operatoin
+
+  >>> i.data = ''
+  >>> i.width, i.height
+  (-1, -1)
+
+  >>> writer = i.open('w')
+  >>> writer.write(open(filePath, 'rb').read())
+  >>> writer.close()
+
+  >>> i.width, i.height
+  (-1, -1)
+
+  >>> i.updateDimension()
+  >>> i.width, i.height
+  (16, 16)
+
+Let's try another image formats
+
+  >>> filePath = os.path.join(os.path.split(tests.__file__)[0], 'image.png')
+  >>> i.data = open(filePath, 'rb').read()
+  >>> i.width, i.height
+  (16, 16)
+
+  >>> filePath = os.path.join(os.path.split(tests.__file__)[0], 'image.jpg')
+  >>> i.data = open(filePath, 'rb').read()
+  >>> i.width, i.height
+  (16, 16)
+
+
+===============
+FileData object
+===============
+
+FileData object is used by fields and widgets to pass data. Also
+FileData has mimeType autodetection code
+
+  >>> from StringIO import StringIO
+  >>> from zojax.filefield.data import FileData
+
+  >>> fileData = FileData('test')
+  >>> fileData.filename
+  u''
+  >>> fileData.mimeType
+  'application/octet-stream'
+  >>> len(fileData)
+  4
+  >>> fileData.data
+  'test'
+
+
+for None value
+
+  >>> fileData = FileData(None)
+  >>> fileData.filename
+  u''
+  >>> fileData.mimeType
+  'application/octet-stream'
+  >>> len(fileData)
+  0
+  >>> fileData.data
+  u''
+
+
+FileData accepts file-like objects, strings and None only
+
+  >>> fileData = FileData(object())
+  Traceback (most recent call last):
+  ...
+  ValueError: File object is required.
+
+
+Real file
+
+  >>> filePath = os.path.join(os.path.split(tests.__file__)[0], 'image.jpg')
+  >>> data = StringIO(open(filePath, 'rb').read())
+  >>> data.filename = 'image.jpg'
+  >>> fileData = FileData(data)
+
+  >>> fileData.filename
+  'image.jpg'
+
+  >>> fileData.mimeType
+  'image/jpeg'
+
+  >>> len(fileData)
+  755
+
+  >>> fileData.data
+  '\xff\xd8\xff\xe0\x00\x10JFIF...\xff\xd9'

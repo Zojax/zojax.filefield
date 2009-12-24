@@ -1,0 +1,119 @@
+===========
+File Widget
+===========
+
+  >>> from zojax.filefield.field import FileField
+  >>> from zojax.filefield.interfaces import IFileWidget, IFileDataNoValue
+  >>> from zojax.filefield import widget as widgetMod
+
+  >>> from z3c.form import interfaces
+  >>> from z3c.form.testing import TestRequest
+  >>> request = TestRequest()
+
+  >>> field = FileField(
+  ...     __name__ = 'data',
+  ...     title = u'Title',
+  ...     required = False)
+
+  >>> widget = widgetMod.FileFieldWidget(field, request)
+  >>> widget.id = 'widget.id'
+  >>> widget.name = 'widget.name'
+
+We also need to register the template for the widget:
+
+  >>> import zope.component
+  >>> from zope.pagetemplate.interfaces import IPageTemplate
+  >>> from z3c.form.testing import getPath
+  >>> from z3c.form.widget import WidgetTemplateFactory
+
+  >>> zope.component.provideAdapter(
+  ...     WidgetTemplateFactory(getPath('file_input.pt'), 'text/html'),
+  ...     (None, None, None, None, IFileWidget),
+  ...     IPageTemplate, name=interfaces.INPUT_MODE)
+
+  >>> widget.update()
+  >>> print widget.render()
+  <input type="file" id="widget.id" name="widget.name"
+         class="file-widget filefield-field" />
+
+  >>> import os.path
+  >>> filePath = os.path.join(os.path.split(__file__)[0], 'image.gif')
+  >>> imageFile = open(filePath, 'rb')
+
+Empty widget
+
+  >>> widget.request = TestRequest()
+  >>> widget.update()
+  >>> IFileDataNoValue.providedBy(widget.extract())
+  True
+
+Load file
+
+  >>> widget.request = TestRequest(form={'widget.name': imageFile})
+  >>> widget.update()
+  >>> widget.extract()
+  <zojax.filefield.data.FileData object at ...>
+
+
+Unload option is not available for add form and for required field
+
+  >>> fieldReq = FileField(
+  ...     __name__ = 'data',
+  ...     title = u'Title',
+  ...     required = True)
+
+  >>> widget = widgetMod.FileFieldWidget(fieldReq, request)
+  >>> widget.id = 'widget.id'
+  >>> widget.name = 'widget.name'
+
+  >>> widget.update()
+  >>> print widget.render()
+  <input type="file" id="widget.id" name="widget.name"
+         class="file-widget required filefield-field" />
+
+
+============
+Data Manager
+============
+
+  >>> from zope import interface
+  >>> from zojax.filefield.field import FileField, FileFieldProperty
+
+  >>> class IFileContent(interface.Interface):
+  ...     data = FileField(
+  ...         title = u'Date',
+  ...         required = True)
+  ...     data2 = FileField(
+  ...         title = u'Date2',
+  ...         readonly = True)
+
+  >>> class FileContent(object):
+  ...     interface.implements(IFileContent)
+  ...     data = FileFieldProperty(IFileContent['data'])
+  ...     data2 = FileFieldProperty(IFileContent['data2'])
+
+  >>> fileContent = FileContent()
+
+  >>> dataDm = widgetMod.FileFieldDataManager(fileContent, IFileContent['data'])
+
+  >>> dataDm.get()
+  <zojax.filefield.data.File ...>
+
+  >>> from zojax.filefield.data import FileData
+
+  >>> dataDm.set(FileData(open(filePath, 'rb').read()))
+
+  >>> data = dataDm.get()
+  >>> data.mimeType, data.size
+  ('image/gif', 387)
+
+  >>> dataDm.set(None)
+  >>> data = dataDm.get()
+  >>> data.mimeType, data.size
+  ('image/gif', 387)
+
+  >>> dataDm = widgetMod.FileFieldDataManager(fileContent, IFileContent['data2'])
+  >>> dataDm.set(FileData(open(filePath, 'rb').read()))
+  Traceback (most recent call last):
+  ...
+  TypeError: Can't set values on read-only fields ...

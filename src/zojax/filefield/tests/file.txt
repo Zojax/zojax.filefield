@@ -1,0 +1,156 @@
+==========
+File Field
+==========
+
+  >>> from zojax.filefield.field import FileField
+  >>> from zojax.filefield.data import File, FileData
+
+File Field Validation
+---------------------
+
+  >>> fileField = FileField(max_length=10, mimeTypes=('text',))
+  Traceback (most recent call last):
+  ...
+  ValueError: ('Mime type format error.', ('text',))
+
+  >>> fileField = FileField(max_length=10, mimeTypes=('text/plain',))
+
+Let's first check the basic validation. First of all we can assign
+only IFile or IFileData instances
+
+  >>> fileField.validate('test')
+  Traceback (most recent call last):
+  ...
+  WrongType: ('test', (<InterfaceClass zojax.filefield.interfaces.IFile>, <InterfaceClass zojax.filefield.interfaces.IFileData>))
+
+Let's use FileData, but data mimeType is wrong
+
+  >>> fileField.validate(FileData('test'))
+  Traceback (most recent call last):
+  ...
+  NotAllowedFileType: ('application/octet-stream', ('text/plain',))
+
+Right data
+
+  >>> fileField.validate(FileData('test', mimeType='text/plain'))
+
+Partial mimetype definition
+
+  >>> fileField = FileField(max_length=10, mimeTypes=('text/*',))
+
+Should pass
+
+  >>> fileField.validate(FileData('test', mimeType='text/html'))
+
+
+get/set field value
+-------------------
+
+  >>> from zope import interface, schema
+  >>> from zojax.filefield.field import FileFieldProperty
+
+  >>> class IFileContent(interface.Interface):
+  ...     
+  ...     title = schema.TextLine(
+  ...         title = u'Title',
+  ...         required = True)
+  ...     
+  ...     data = FileField(
+  ...         title = u'Data',
+  ...         mimeTypes = ('text/*',),
+  ...         required = True)
+  ...     
+  ...     data2 = FileField(
+  ...         title = u'Data',
+  ...         mimeTypes = ('text/*',),
+  ...         readonly = True,
+  ...         required = True)
+
+  >>> class FileContent(object):
+  ...     
+  ...     data = FileFieldProperty(IFileContent['data'])
+  ...     data2 = FileFieldProperty(IFileContent['data2'])
+
+
+  >>> fileContent = FileContent()
+
+get
+---
+
+Field data is always File instance
+
+  >>> fileContent.data
+  <zojax.filefield.data.File ...>
+
+  >>> fileContent.data = FileData('test')
+  Traceback (most recent call last):
+  ...
+  NotAllowedFileType: ('application/octet-stream', ('text/*',))
+
+  >>> fileContent.data = FileData('test', mimeType='text/html')
+  >>> fileContent.data.size
+  4
+  >>> fileContent.data.mimeType
+  'text/html'
+
+if field value if not IFile this value automaticly converts to IFile
+
+  >>> fileContent.__dict__['data'] = 'test'
+  >>> fileContent.__dict__['data']
+  'test'
+  >>> fileContent.data
+  <zojax.filefield.data.File object at ...>
+  >>> fileContent.__dict__['data']
+  <zojax.filefield.data.File object at ...>
+
+
+set
+---
+
+  >>> fileContent.data = FileData('test', mimeType='text/html')
+  
+  >>> fileContent.data2 = FileData('test', mimeType='text/html')
+  Traceback (most recent call last):
+  ...
+  TypeError: Can't set values on read-only fields ...
+
+we can set IFile object, then data just replaced with new File
+
+  >>> file = File()
+  >>> file.mimeType = 'text/html'
+  >>> file.data = 'test'
+
+  >>> fileContent.data = file
+  >>> fileContent.data is file
+  True
+
+
+non zero
+--------
+
+  >>> fileContent.data = FileData('', mimeType='text/html')
+  >>> bool(fileContent.data)
+  False
+
+  >>> fileContent.data = FileData('test', mimeType='text/html')
+  >>> bool(fileContent.data)
+  True
+
+
+clear
+-----
+
+We can clear all data attribute, but shorter version send special marker
+
+  >>> from zojax.filefield.data import fileDataClear
+  >>> fileContent.data = fileDataClear
+  >>> fileContent.data.mimeType
+  u''
+  >>> fileContent.data.size
+  0
+  >>> fileContent.data.data
+  ''
+
+  >>> fileContent.data = fileDataClear
+  >>> fileContent.data
+  <zojax.filefield.data.File object at ...>

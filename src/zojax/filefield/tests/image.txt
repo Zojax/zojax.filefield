@@ -1,0 +1,186 @@
+==========
+File Field
+==========
+
+  >>> import os.path
+  >>> from zojax.filefield.tests import tests
+  >>> from zojax.filefield.field import ImageField
+  >>> from zojax.filefield.data import Image, FileData
+
+  >>> filePath = os.path.join(os.path.split(tests.__file__)[0], 'image.gif')
+  >>> imageData = open(filePath, 'rb').read()
+
+
+Image Field Validation
+----------------------
+
+  >>> imageField = ImageField()
+
+Let's first check the basic validation. First of all we can assign
+only IImage or IFileData instances
+
+  >>> imageField.validate('test')
+  Traceback (most recent call last):
+  ...
+  WrongType: ('test', (<InterfaceClass zojax.filefield.interfaces.IImage>, <InterfaceClass zojax.filefield.interfaces.IFileData>))
+
+Let's use FileData, but data mimeType is wrong
+
+  >>> imageField.validate(FileData('test'))
+  Traceback (most recent call last):
+  ...
+  NotAllowedFileType: ('application/octet-stream', ('image/jpeg', 'image/gif', 'image/png'))
+
+Right data
+
+  >>> imageField.validate(FileData(imageData))
+
+maxWidth, maxHeight
+
+  >>> imageField = ImageField(maxWidth=10)
+  >>> imageField.validate(FileData(imageData))
+  Traceback (most recent call last):
+  ...
+  ImageDimensionExceeded: (16, ('width', 10))
+
+  >>> imageField = ImageField(maxHeight=14)
+  >>> imageField.validate(FileData(imageData))
+  Traceback (most recent call last):
+  ...
+  ImageDimensionExceeded: (16, ('height', 14))
+
+  >>> image = Image()
+  >>> image.mimeType = 'image/gif'
+  >>> image.data = imageData
+
+  >>> imageField.validate(image)
+  Traceback (most recent call last):
+  ...
+  ImageDimensionExceeded: (16, ('height', 14))
+
+
+get/set field value
+-------------------
+
+  >>> from zope import interface, schema
+  >>> from zojax.filefield.field import FileFieldProperty
+
+  >>> class IImageContent(interface.Interface):
+  ...     
+  ...     title = schema.TextLine(
+  ...         title = u'Title',
+  ...         required = True)
+  ...     
+  ...     data = ImageField(
+  ...         title = u'Data',
+  ...         required = True)
+  ...     
+  ...     data2 = ImageField(
+  ...         title = u'Data',
+  ...         readonly = True,
+  ...         required = True)
+
+  >>> class ImageContent(object):
+  ...     
+  ...     data = FileFieldProperty(IImageContent['data'])
+  ...     data2 = FileFieldProperty(IImageContent['data2'])
+
+
+  >>> imageContent = ImageContent()
+
+
+get
+---
+
+  >>> imageContent.data
+  <zojax.filefield.data.Image ...>
+
+  >>> imageContent.data = FileData('test')
+  Traceback (most recent call last):
+  ...
+  NotAllowedFileType: ('application/octet-stream', ('image/jpeg', 'image/gif', 'image/png'))
+
+  >>> imageContent.data = FileData(imageData)
+  >>> imageContent.data.size
+  387
+  >>> imageContent.data.mimeType
+  'image/gif'
+
+if field value if not IFile this value automaticly converts to IFile
+
+  >>> imageContent.__dict__['data'] = 'test'
+  >>> imageContent.__dict__['data']
+  'test'
+  >>> imageContent.data
+  <zojax.filefield.data.Image object at ...>
+  >>> imageContent.__dict__['data']
+  <zojax.filefield.data.Image object at ...>
+
+
+set
+---
+
+  >>> imageContent.data = FileData(imageData)
+  
+  >>> imageContent.data2 = FileData(imageData)
+  Traceback (most recent call last):
+  ...
+  TypeError: Can't set values on read-only fields ...
+
+we can set IImage object, then data just replaced with new File
+
+  >>> image = Image()
+  >>> image.mimeType = 'image/jpeg'
+
+  >>> imageContent.data = image
+  >>> imageContent.data is image
+  True
+
+
+auto scale
+----------
+
+  >>> from zope import component
+  >>> from zojax.converter.image import gif
+  >>> component.provideUtility(
+  ...     gif.GIFtoGIFConverter(), name='image/gif:image/gif')
+
+  >>> class IImageContent2(interface.Interface):
+  ...     
+  ...     data = ImageField(
+  ...         title = u'Data',
+  ...         scale = True,
+  ...         maxWidth = 10, maxHeight=12,
+  ...         required = True)
+
+
+  >>> class ImageContent2(object):
+  ...     
+  ...     data = FileFieldProperty(IImageContent2['data'])
+
+  >>> imageContent2 = ImageContent2()
+
+  >>> imageContent2.data = FileData(imageData)
+  >>> imageContent2.data.width, imageContent2.data.height
+  (10, 10)
+
+
+clear
+-----
+
+We can clear all data attribute, but shorter version send special marker
+
+  >>> from zojax.filefield.data import fileDataClear
+  >>> imageContent.data = fileDataClear
+  >>> imageContent.data.mimeType
+  u''
+  >>> imageContent.data.size
+  0
+  >>> imageContent.data.data
+  ''
+
+clear also will create empty image
+
+  >>> imageContent.data = fileDataClear
+  >>> imageContent.data
+  <zojax.filefield.data.Image object at ...>
