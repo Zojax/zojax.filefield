@@ -1,0 +1,51 @@
+<configure
+   xmlns="http://namespaces.zope.org/zope"
+   xmlns:browser="http://namespaces.zope.org/browser"
+   i18n_domain="zojax.filefield">
+
+  <!-- widget -->
+  <adapter factory=".widget.FileFieldWidget" />
+  <adapter factory=".widget.FileFieldValidator" />
+  <adapter factory=".widget.FileFieldDataManager" />
+  <adapter factory=".widget.FileWidgetDataConverter" />
+
+  <!-- File -->
+  <class class=".data.File">
+    <require
+       permission="zope.Public"
+       interface=".interfaces.IFile" />
+  </class>
+
+  <adapter factory=".copy.fileCopyFactory" />
+
+  <class class=".data.DownloadResult">
+    <allow interface="zope.publisher.interfaces.http.IResult" />
+  </class>
+
+  <!-- Image -->
+  <class class=".data.Image">
+    <require
+       permission="zope.Public"
+       interface=".interfaces.IImage" />
+  </class>
+
+  <adapter factory=".copy.imageCopyFactory" />
+
+  <!-- browser view -->
+  <browser:defaultView
+     name="index.html"
+     for=".interfaces.IFile" />
+
+  <browser:page
+     name="index.html"
+     for=".interfaces.IFile"
+     class=".data.FileView"
+     permission="zope.Public" />
+
+  <adapter factory=".data.FileTraverser" />
+
+  <class class=".data.FileTraverser">
+    <allow interface="zope.publisher.interfaces.IPublishTraverse" />
+  </class>
+
+</configure>

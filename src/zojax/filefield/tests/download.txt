@@ -1,0 +1,131 @@
+=============
+Download File
+=============
+
+  >>> import transaction
+  >>> from zojax.filefield.data import File
+  >>> from zope.publisher.browser import TestRequest
+
+  >>> f = File()
+  >>> getRootFolder()['file'] = f
+  >>> transaction.commit()
+
+Headers
+-------
+
+By default is used filename attribute for content disposition
+filename, and inline. 
+
+  >>> request = TestRequest()
+  >>> results = f.show(request)
+  >>> sorted(request.response.getHeaders()[-3:])
+  [('Content-Disposition', 'inline; filename="file"'),
+   ('Content-Length', '0'),
+   ('Content-Type', 'text/plain')]
+
+Note that a default content type of 'application/octet-stream' is
+used.
+
+If the file object specifies a content type, that's used in the headers
+by default. Same for filename.
+
+  >>> f.filename = 'test.txt'
+  >>> f.mimeType = 'text/plain'
+  >>> results = f.show(request)
+  >>> sorted(request.response.getHeaders()[-3:])
+  [('Content-Disposition', 'inline; filename="test.txt"'),
+   ('Content-Length', '0'),
+   ('Content-Type', 'text/plain')]
+
+We can override filename and content disposition
+
+  >>> results = f.show(request, 'document.txt', 'attachment')
+  >>> sorted(request.response.getHeaders()[-3:])
+  [('Content-Disposition', 'attachment; filename="document.txt"'),
+   ('Content-Length', '0'),
+   ('Content-Type', 'text/plain')]
+
+
+Body
+----
+
+We use DownloadResult to deliver the content to the browser.  Since
+there's no data in this file, there are no body chunks:
+
+  >>> transaction.commit()
+  >>> from zojax.filefield.data import DownloadResult
+  >>> result = DownloadResult(f)
+  >>> list(result)
+  []
+
+We still need to see how non-empty files are handled.  Let's write
+some data to our file object:
+
+  >>> w = f.open("w")
+  >>> w.write("some text")
+  >>> w.flush()
+  >>> w.close()
+  >>> transaction.commit()
+
+Now we can create a result object and see if we get the data we
+expect:
+
+  >>> result = DownloadResult(f)
+  >>> L = list(result)
+  >>> "".join(L)
+  'some text'
+
+If the body content is really large, the iterator may provide more
+than one chunk of data:
+
+  >>> w = f.open("w")
+  >>> w.write("*" * 1024 * 1024)
+  >>> w.flush()
+  >>> w.close()
+  >>> transaction.commit()
+
+  >>> result = DownloadResult(f)
+  >>> L = list(result)
+  >>> len(L) > 1
+  True
+
+Once iteration over the body has completed, further iteration will not
+yield additional data:
+
+  >>> list(result)
+  []
+
+
+The Download View
+-----------------
+
+Now that we've seen the ``getHeaders`` function and the result object,
+let's take a look at the basic download view that uses them.  We'll need
+to add a file object where we can get to it using a browser:
+
+  >>> f = File()
+  >>> f.mimeType = "text/plain"
+  >>> f.filename = 'abcdefg'
+  >>> w = f.open("w")
+  >>> w.write("some text")
+  >>> w.close()
+  >>> transaction.commit()
+
+  >>> getRootFolder()["abcdefg"] = f
+
+  >>> transaction.commit()
+
+Now, let's request the download view of the file object and check the
+result:
+
+  >>> print http("""
+  ... GET /abcdefg/@@index.html HTTP/1.1
+  ... Authorization: Basic mgr:mgrpw
+  ... """, handle_errors=False)
+  HTTP/1.1 200 Ok
+  Content-Disposition: inline; filename="abcdefg"
+  Content-Length: 9
+  Content-Type: text/plain
+  Last-Modified: ...
+  <BLANKLINE>
+  some text

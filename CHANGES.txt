@@ -1,0 +1,139 @@
+=======
+CHANGES
+=======
+
+0.7.1 (2009-11-30)
+------------------
+
+- Added a hook to make "copy.deepcopy" function work.
+
+
+0.7.0 (2009-10-12)
+------------------
+
+- Added 'hash' attribute for IFile
+
+- Copyright changed to 'Zope Foundation and Contributors'
+
+
+0.6.0 (2009-05-21)
+------------------
+
+- Added image auto scaling
+
+- Do not use z3c.autoinclude
+
+
+0.5.5 (2009-03-15)
+------------------
+
+- Added layer for FunctionDocFileSuite
+
+
+0.5.4 (2009-01-25)
+------------------
+
+- Show 'Unload' widget only when required
+
+- Fixed testing setup for ZODB3 > 3.9.0
+
+
+0.5.3 (2008-12-17)
+------------------
+
+- Fixed tests for ZODB3 > 3.9.0
+ 
+
+0.5.2 (2008-11-26)
+------------------
+
+- Fixed 'Uncommitted changes' exception
+
+
+0.5.1 (2008-11-24)
+------------------
+
+- Fixed python2.4 compatibility
+
+
+0.5.0 (2008-10-10)
+------------------
+
+- Added marker for 'no value'
+
+
+0.4.0 (2008-10-07)
+------------------
+
+- Fixed Blob copy/paste problem
+
+
+0.3.8 (2008-10-04)
+------------------
+
+- Fixed calculation of last modified time header and
+  field data modification time
+
+
+0.3.7 (2008-10-01)
+------------------
+
+- Use zojax.converter instead of z3c.filetype
+
+
+0.3.6 (2008-09-22)
+------------------
+
+- Added __nonzero__ to File class
+
+
+0.3.5 (2008-09-15)
+------------------
+
+- Clear security proxy in set/get methods
+
+
+0.3.4 (2008-09-13)
+------------------
+
+- Do not use __dict__ in field get/set methods
+
+
+0.3.3 (2008-09-10)
+------------------
+
+- Fixed losing file/image field attribute
+
+
+0.3.2 (2008-09-10)
+------------------
+
+- FileData converts None to empty string
+
+
+0.3.1 (2008-09-08)
+------------------
+
+- Fixed set None to File/Image field
+
+
+0.3 (2008-09-05)
+----------------
+
+- Added ImageField
+
+- Added tests
+
+
+0.2 (2008-08-28)
+----------------
+
+- Added monkey patch for Blob
+
+- Added afterCopy handler
+
+
+0.1.0 (2008-08-27)
+------------------
+
+- Initial release
