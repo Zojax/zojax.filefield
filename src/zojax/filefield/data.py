@@ -77,6 +77,10 @@ class File(Persistent):
         return data
 
     @getproperty
+    def previewIsAvailable(self):
+        return self.mimeType in PREVIEWED_TYPES
+
+    @getproperty
     def size(self):
         if 'size' in self.__dict__:
             return self.__dict__['size']
@@ -245,7 +249,6 @@ class File(Persistent):
             elif self.mimeType in PREVIEWED_TYPES:
                 pdf_path = self._blob.committed()
             else:
-                raise
                 return
             temp_files.append(pth)
             swf_path = pth + ".swf"

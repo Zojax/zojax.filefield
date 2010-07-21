@@ -99,6 +99,10 @@ class IFile(interface.Interface):
         title = _(u'Preview Data'),
         required = False)
 
+    previewIsAvailable = schema.Bool(
+        title = _(u'Preview is Available'),
+        required = False)
+
     size = interface.Attribute('File size')
 
     previewSize = interface.Attribute('File preview size')
@@ -108,6 +112,8 @@ class IFile(interface.Interface):
     filename = interface.Attribute('File name')
 
     modified = interface.Attribute('Modified time')
+
+
 
     def open(mode='r'):
         """ Open file and return the file descriptor """
