@@ -15,8 +15,10 @@
 
 $Id$
 """
-import pytz, os.path, time, os, stat, struct, rfc822, md5
+import pytz, os.path, time, os, stat, struct, rfc822, md5, random, shlex, string, \
+        subprocess, tempfile
 
+import transaction
 from ZODB.blob import Blob
 from datetime import datetime
 from StringIO import StringIO
@@ -31,9 +33,11 @@ from zope.publisher.interfaces.http import IResult
 from zope.publisher.interfaces import IPublishTraverse
 
 from zojax.converter import api
+from zojax.resourcepackage import library
 
 from interfaces import IFile, IImage, IFileData
-from interfaces import IFileDataClear, IFileDataNoValue
+from interfaces import IFileDataClear, IFileDataNoValue, OO_CONVERTER_EXECUTABLE, \
+OO_CONVERTED_TYPES, PREVIEWED_TYPES
 
 
 class File(Persistent):
@@ -46,6 +50,7 @@ class File(Persistent):
 
     def __init__(self):
         self._blob = Blob()
+        self._previewBlob = Blob()
         self.data = u''
 
     @setproperty
@@ -65,6 +70,13 @@ class File(Persistent):
         return data
 
     @getproperty
+    def previewData(self):
+        fp = self._previewBlob.open('r')
+        data = fp.read()
+        fp.close()
+        return data
+
+    @getproperty
     def size(self):
         if 'size' in self.__dict__:
             return self.__dict__['size']
@@ -79,6 +91,18 @@ class File(Persistent):
     @setproperty
     def size(self, value):
         self.__dict__['size'] = value
+
+    @getproperty
+    def previewSize(self):
+        if 'previewSize' in self.__dict__:
+            return self.__dict__['previewSize']
+        else:
+            reader = self.openPreview()
+            reader.seek(0,2)
+            size = int(reader.tell())
+            reader.close()
+            self.__dict__['previewSize'] = size
+            return size
 
     @Lazy
     def hash(self):
@@ -106,8 +130,20 @@ class File(Persistent):
 
         return self._blob.open(mode)
 
+    def openPreview(self, mode="r"):
+        if 'w' in mode and 'previewSize' in self.__dict__:
+            del self.__dict__['previewSize']
+        try:
+            return self._previewBlob.open(mode)
+        except AttributeError:
+            self._previewBlob = Blob()
+            return self._previewBlob.open(mode)
+
     def openDetached(self):
         return file(self._blob.committed(), 'rb')
+
+    def openPreviewDetached(self):
+        return file(self._previewBlob.committed(), 'rb')
 
     def show(self, request, filename=None, contentDisposition="inline"):
         response = request.response
@@ -147,6 +183,84 @@ class File(Persistent):
             return ''
         else:
             return DownloadResult(self)
+
+    def showPreview(self, request, filename=None, contentDisposition="inline"):
+        response = request.response
+
+        if self.size and not self.previewSize:
+            self.generatePreview()
+            transaction.commit()
+
+        response.setHeader('Content-Type', 'application/x-shockwave-flash')
+
+        response.setHeader('Content-Length', self.previewSize)
+
+        modified = self.modified
+
+        header = request.getHeader('If-Modified-Since', None)
+
+        lmt = long(rfc822.mktime_tz(modified.utctimetuple() + (0,)))
+
+        if header is not None:
+            header = header.split(';')[0]
+            try:    mod_since=long(zope.datetime.time(header))
+            except: mod_since=None
+            if mod_since is not None:
+                if lmt <= mod_since:
+                    response.setStatus(304)
+                    return ''
+        response.setHeader('Last-Modified', zope.datetime.rfc1123_date(lmt))
+
+        if filename is None:
+            filename = self.filename
+
+        response.setHeader(
+            'Content-Disposition','%s; filename="%s"'%(
+                contentDisposition, filename.encode('utf-8')))
+
+        if not self.previewSize:
+            response.setHeader('Content-Type', 'text/plain')
+            return ''
+        else:
+            return DownloadPreviewResult(self)
+
+    def generatePreview(self):
+        temp_files = []
+        try:
+            pth = tempfile.mkstemp()[1]
+            if self.mimeType in OO_CONVERTED_TYPES:
+                pdf_path = pth + ".pdf"
+                if 'spreadsheet' in self.mimeType:
+                    format = 'spreadsheet'
+                elif 'presentation' in self.mimeType:
+                    format = 'presentation'
+                else:
+                    format = 'document'
+                parts = shlex.split('sh -c "%s -d %s --stdout %s > %s"' % (OO_CONVERTER_EXECUTABLE, format, self._blob.committed(), pdf_path))
+                p = subprocess.Popen(parts, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                out, errors = p.communicate()
+                if not os.path.exists(pdf_path):
+                    return
+                temp_files.append(pdf_path)
+            elif self.mimeType in PREVIEWED_TYPES:
+                pdf_path = self._blob.committed()
+            else:
+                raise
+                return
+            temp_files.append(pth)
+            swf_path = pth + ".swf"
+            parts = shlex.split("pdf2swf %s -o %s -T 9 -f" % (pdf_path, swf_path))
+
+            p = subprocess.Popen(parts, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            out, errors = p.communicate()
+            if not errors and os.path.exists(swf_path):
+                fp = self.openPreview('w')
+                fp.write(open(swf_path).read())
+                fp.close()
+                temp_files.append(swf_path)
+        finally:
+            for i in temp_files:
+                os.remove(i)
 
     def __deepcopy__(self, memo):
         new = File()
@@ -246,6 +360,18 @@ class FileView(object):
         return self.context.show(self.request)
 
 
+class FilePreView(object):
+
+    def __call__(self):
+        return self.context.showPreview(self.request)
+
+
+class FilePreViewPage(object):
+
+    def update(self):
+        library.include('jquery-plugins')
+
+
 class FileTraverser(object):
     interface.implements(IPublishTraverse)
     component.adapts(IFile, interface.Interface)
@@ -271,6 +397,15 @@ class DownloadResult(object):
 
     def __init__(self, context):
         self._iter = bodyIterator(context.openDetached())
+
+    def __iter__(self):
+        return self._iter
+
+class DownloadPreviewResult(object):
+    interface.implements(IResult)
+
+    def __init__(self, context):
+        self._iter = bodyIterator(context.openPreviewDetached())
 
     def __iter__(self):
         return self._iter

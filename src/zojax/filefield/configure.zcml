@@ -1,6 +1,7 @@
 <configure
    xmlns="http://namespaces.zope.org/zope"
    xmlns:browser="http://namespaces.zope.org/browser"
+   xmlns:zojax="http://namespaces.zope.org/zojax"
    i18n_domain="zojax.filefield">
 
   <!-- widget -->
@@ -22,6 +23,10 @@
     <allow interface="zope.publisher.interfaces.http.IResult" />
   </class>
 
+  <class class=".data.DownloadPreviewResult">
+    <allow interface="zope.publisher.interfaces.http.IResult" />
+  </class>
+
   <!-- Image -->
   <class class=".data.Image">
     <require
@@ -40,6 +45,32 @@
      name="index.html"
      for=".interfaces.IFile"
      class=".data.FileView"
+     permission="zope.Public" />
+
+  <browser:page
+     name="preview"
+     for=".interfaces.IFile"
+     class=".data.FilePreView"
+     permission="zope.Public" />
+
+  <zojax:pagelet
+     name="preview.html"
+     for=".interfaces.IFile"
+     template="preview-page.pt"
+     permission="zope.Public" />
+
+
+  <!-- resources -->
+  <zojax:resourcedirectory
+     name="filefield"
+     directory="resources" />
+
+  <zojax:pagelet
+     type="pagelet"
+     name="preview"
+     template="preview.pt"
+     for=".interfaces.IFile"
+     class=".data.FilePreViewPage"
      permission="zope.Public" />
 
   <adapter factory=".data.FileTraverser" />

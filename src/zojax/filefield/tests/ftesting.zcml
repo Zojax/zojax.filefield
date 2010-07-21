@@ -1,9 +1,12 @@
 <configure
    xmlns="http://namespaces.zope.org/zope"
+   xmlns:browser="http://namespaces.zope.org/browser"
    i18n_domain="zope">
 
   <include package="zojax.autoinclude" file="meta.zcml" />
   <includeAllDependencies package="zojax.filefield" extras="test" />
+
+  <includeOverrides package="zojax.filefield.tests" file="overrides.zcml" />
 
   <!-- Security -->
   <include package="zope.securitypolicy" file="meta.zcml" />
@@ -11,6 +14,13 @@
 
   <securityPolicy
       component="zope.securitypolicy.zopepolicy.ZopeSecurityPolicy" />
+
+  <interface
+     name="DefaultSkin"
+     interface="zojax.filefield.tests.interfaces.IDefaultSkin"
+     type="zope.publisher.interfaces.browser.IBrowserSkinType" />
+
+  <browser:defaultSkin name="DefaultSkin" />
 
   <role
       id="zope.Anonymous"

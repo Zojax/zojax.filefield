@@ -1,0 +1,9 @@
+<html>
+  <head>
+    <!--resourcepackages-->
+  </head>
+  <body>
+    <tal:block tal:content="structure view/render" />
+  </body>
+</html>
+

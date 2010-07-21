@@ -21,6 +21,29 @@ from zope.i18nmessageid import MessageFactory
 
 _ = MessageFactory('zojax')
 
+OO_CONVERTER_EXECUTABLE = 'unoconv'
+OO_CONVERTED_TYPES = ['application/vnd.oasis.opendocument.database',
+                      'application/vnd.oasis.opendocument.formula',
+                      'application/vnd.oasis.opendocument.graphics',
+                      'application/vnd.oasis.opendocument.graphics-template',
+                      'application/vnd.oasis.opendocument.image',
+                      'application/vnd.oasis.opendocument.presentation',
+                      'application/vnd.oasis.opendocument.presentation-template',
+                      'application/vnd.oasis.opendocument.spreadsheet',
+                      'application/vnd.oasis.opendocument.spreadsheet-template',
+                      'application/vnd.oasis.opendocument.text',
+                      'application/vnd.oasis.opendocument.text-master',
+                      'application/vnd.oasis.opendocument.text-template',
+                      'application/vnd.oasis.opendocument.text-web',
+                      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheetv',
+                      'application/vnd.openxmlformats-officedocument.spreadsheetml.template',
+                      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+                      'application/vnd.openxmlformats-officedocument.presentationml.slideshow',
+                      'application/vnd.openxmlformats-officedocument.presentationml.template',
+                      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                      'application/vnd.openxmlformats-officedocument.wordprocessingml.template']
+
+PREVIEWED_TYPES = OO_CONVERTED_TYPES + ['application/pdf']
 
 class NotAllowedFileType(schema.ValidationError):
     __doc__ = _('Data mime type is not allowed.')
@@ -72,7 +95,13 @@ class IFile(interface.Interface):
         title = _(u'Data'),
         required = False)
 
+    previewData = schema.Bytes(
+        title = _(u'Preview Data'),
+        required = False)
+
     size = interface.Attribute('File size')
+
+    previewSize = interface.Attribute('File preview size')
 
     hash = interface.Attribute('Data md5 hash')
 
@@ -94,6 +123,9 @@ class IFile(interface.Interface):
 
     def show(request, filename=None):
         """ show file """
+
+    def showPreview(request, filename=None):
+        """ show preview of the file """
 
     def __len__(self):
         """ file size in bytes """
