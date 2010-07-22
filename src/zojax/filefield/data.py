@@ -11,12 +11,13 @@
 # FOR A PARTICULAR PURPOSE.
 #
 ##############################################################################
+from zojax.converter.interfaces import ConverterException
 """
 
 $Id$
 """
 import pytz, os.path, time, os, stat, struct, rfc822, md5, random, shlex, string, \
-        subprocess, tempfile
+        subprocess, tempfile, logging
 
 import transaction
 from ZODB.blob import Blob
@@ -38,6 +39,9 @@ from zojax.resourcepackage import library
 from interfaces import IFile, IImage, IFileData
 from interfaces import IFileDataClear, IFileDataNoValue, OO_CONVERTER_EXECUTABLE, \
 OO_CONVERTED_TYPES, PREVIEWED_TYPES
+
+
+logger = logging.getLogger('zojax.filefield')
 
 
 class File(Persistent):
@@ -78,7 +82,11 @@ class File(Persistent):
 
     @getproperty
     def previewIsAvailable(self):
-        return self.mimeType in PREVIEWED_TYPES
+        try:
+            self.generatePreview()
+            return bool(self.previewSize())
+        except ConverterException:
+            return False
 
     @getproperty
     def size(self):
@@ -86,9 +94,11 @@ class File(Persistent):
             return self.__dict__['size']
         else:
             reader = self.open()
-            reader.seek(0,2)
-            size = int(reader.tell())
-            reader.close()
+            try:
+                reader.seek(0,2)
+                size = int(reader.tell())
+            finally:
+                reader.close()
             self.__dict__['size'] = size
             return size
 
@@ -102,9 +112,11 @@ class File(Persistent):
             return self.__dict__['previewSize']
         else:
             reader = self.openPreview()
-            reader.seek(0,2)
-            size = int(reader.tell())
-            reader.close()
+            try:
+                reader.seek(0,2)
+                size = int(reader.tell())
+            finally:
+                reader.close()
             self.__dict__['previewSize'] = size
             return size
 
@@ -129,8 +141,11 @@ class File(Persistent):
         self.data = u''
 
     def open(self, mode="r"):
-        if 'w' in mode and 'size' in self.__dict__:
-            del self.__dict__['size']
+        if 'w' in mode:
+            if 'size' in self.__dict__:
+                del self.__dict__['size']
+            if 'previewSize' in self.__dict__:
+                del self.__dict__['previewSize']
 
         return self._blob.open(mode)
 
@@ -229,47 +244,22 @@ class File(Persistent):
             return DownloadPreviewResult(self)
 
     def generatePreview(self):
-        temp_files = []
+        fp = self.openPreview('w')
+        ff = self.open()
         try:
-            pth = tempfile.mkstemp()[1]
-            if self.mimeType in OO_CONVERTED_TYPES:
-                pdf_path = pth + ".pdf"
-                if 'spreadsheet' in self.mimeType:
-                    format = 'spreadsheet'
-                elif 'presentation' in self.mimeType:
-                    format = 'presentation'
-                else:
-                    format = 'document'
-                parts = shlex.split('sh -c "%s -d %s --stdout %s > %s"' % (OO_CONVERTER_EXECUTABLE, format, self._blob.committed(), pdf_path))
-                p = subprocess.Popen(parts, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                out, errors = p.communicate()
-                if not os.path.exists(pdf_path):
-                    return
-                temp_files.append(pdf_path)
-            elif self.mimeType in PREVIEWED_TYPES:
-                pdf_path = self._blob.committed()
-            else:
-                return
-            temp_files.append(pth)
-            swf_path = pth + ".swf"
-            parts = shlex.split("pdf2swf %s -o %s -T 9 -f" % (pdf_path, swf_path))
-
-            p = subprocess.Popen(parts, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            out, errors = p.communicate()
-            if not errors and os.path.exists(swf_path):
-                fp = self.openPreview('w')
-                fp.write(open(swf_path).read())
-                fp.close()
-                temp_files.append(swf_path)
+            fp.write(api.convert(ff, 'application/x-shockwave-flash', self.mimeType))
+        except ConverterException, e:
+            logger.warning('Error generating preview: %s', e)
         finally:
-            for i in temp_files:
-                os.remove(i)
+            ff.close()
+            fp.close()
 
     def __deepcopy__(self, memo):
         new = File()
         new.data = self.data
         new.filename = self.filename
         new.mimeType = self.mimeType
+        new.generatePreview()
         return new
 
 

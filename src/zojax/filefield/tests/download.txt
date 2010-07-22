@@ -139,6 +139,38 @@ result:
 The Preview View
 -----------------
 
+PDF
+
+  >>> from zojax.filefield import tests
+  >>> import os.path
+  >>> f = File()
+  >>> f.mimeType = "application/pdf"
+  >>> f.filename = 'abcdefg'
+  >>> w = f.open("w")
+  >>> w.write(open(os.path.join(os.path.dirname(tests.__file__), "test.pdf")).read())
+  >>> w.close()
+  >>> transaction.commit()
+
+  >>> getRootFolder()["previewed-pdf"] = f
+
+  >>> transaction.commit()
+
+Now, let's request the download view of the file object and check the
+result:
+
+  >>> print http("""
+  ... GET /previewed-pdf/@@preview HTTP/1.1
+  ... Authorization: Basic mgr:mgrpw
+  ... """, handle_errors=False)
+  HTTP/1.1 200 Ok
+  Content-Disposition: inline; filename="abcdefg"
+  Content-Length: 708
+  Content-Type: application/x-shockwave-flash
+  Last-Modified: ...
+  <BLANKLINE>
+  CWS ...
+
+
 ODT
 
   >>> from zojax.filefield import tests
@@ -239,10 +271,169 @@ result:
           To view this page ensure that Adobe Flash Player version
           9.0.124 or greater is installed.
       </p>
-    <script type="text/javascript">
-            var pageHost = ((document.location.protocol == "https:") ? "https://" : "http://");
-            document.write("<a href="http://www.adobe.com/go/getflashplayer"><img src="\"                           + pageHost + \"www.adobe.com/images/shared/download_buttons/get_flash_player.gif" alt="Get Adobe Flash player" /></a>" );
-        </script>
+  <![CDATA[
+      <script type="text/javascript">
+              var pageHost = ((document.location.protocol == "https:") ? "https://" : "http://");
+              document.write("<a href='http://www.adobe.com/go/getflashplayer'><img src='"
+                              + pageHost + "www.adobe.com/images/shared/download_buttons/get_flash_player.gif' alt='Get Adobe Flash player' /></a>" );
+          </script>
+      ]]>
   </div></div></div></div>
   </body>
   </html>
+
+RTF
+
+  >>> from zojax.filefield import tests
+  >>> import os.path
+  >>> f = File()
+  >>> f.mimeType = "application/rtf"
+  >>> f.filename = 'abcdefg'
+  >>> w = f.open("w")
+  >>> w.write(open(os.path.join(os.path.dirname(tests.__file__), "test.rtf")).read())
+  >>> w.close()
+  >>> transaction.commit()
+
+  >>> getRootFolder()["previewed-rtf"] = f
+
+  >>> transaction.commit()
+
+Now, let's request the download view of the file object and check the
+result:
+
+  >>> print http("""
+  ... GET /previewed-rtf/@@preview HTTP/1.1
+  ... Authorization: Basic mgr:mgrpw
+  ... """, handle_errors=False)
+  HTTP/1.1 200 Ok
+  Content-Disposition: inline; filename="abcdefg"
+  Content-Length: 768
+  Content-Type: application/x-shockwave-flash
+  Last-Modified: ...
+  <BLANKLINE>
+  CWS ...
+
+XLS
+
+  >>> from zojax.filefield import tests
+  >>> import os.path
+  >>> f = File()
+  >>> f.mimeType = "application/vnd.ms-excel"
+  >>> f.filename = 'abcdefg'
+  >>> w = f.open("w")
+  >>> w.write(open(os.path.join(os.path.dirname(tests.__file__), "test.xls")).read())
+  >>> w.close()
+  >>> transaction.commit()
+
+  >>> getRootFolder()["previewed-xls"] = f
+
+  >>> transaction.commit()
+
+Now, let's request the download view of the file object and check the
+result:
+
+  >>> print http("""
+  ... GET /previewed-xls/@@preview HTTP/1.1
+  ... Authorization: Basic mgr:mgrpw
+  ... """, handle_errors=False)
+  HTTP/1.1 200 Ok
+  Content-Disposition: inline; filename="abcdefg"
+  Content-Length: 20581
+  Content-Type: application/x-shockwave-flash
+  Last-Modified: ...
+  <BLANKLINE>
+  CWS ...
+
+XLSX
+
+  >>> from zojax.filefield import tests
+  >>> import os.path
+  >>> f = File()
+  >>> f.mimeType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  >>> f.filename = 'abcdefg'
+  >>> w = f.open("w")
+  >>> w.write(open(os.path.join(os.path.dirname(tests.__file__), "test.xlsx")).read())
+  >>> w.close()
+  >>> transaction.commit()
+
+  >>> getRootFolder()["previewed-xlsx"] = f
+
+  >>> transaction.commit()
+
+Now, let's request the download view of the file object and check the
+result:
+
+  >>> print http("""
+  ... GET /previewed-xlsx/@@preview HTTP/1.1
+  ... Authorization: Basic mgr:mgrpw
+  ... """, handle_errors=False)
+  HTTP/1.1 200 Ok
+  Content-Disposition: inline; filename="abcdefg"
+  Content-Length: 20581
+  Content-Type: application/x-shockwave-flash
+  Last-Modified: ...
+  <BLANKLINE>
+  CWS ...
+
+ODS
+
+  >>> from zojax.filefield import tests
+  >>> import os.path
+  >>> f = File()
+  >>> f.mimeType = "application/vnd.oasis.opendocument.spreadsheet"
+  >>> f.filename = 'abcdefg'
+  >>> w = f.open("w")
+  >>> w.write(open(os.path.join(os.path.dirname(tests.__file__), "test.ods")).read())
+  >>> w.close()
+  >>> transaction.commit()
+
+  >>> getRootFolder()["previewed-ods"] = f
+
+  >>> transaction.commit()
+
+Now, let's request the download view of the file object and check the
+result:
+
+  >>> print http("""
+  ... GET /previewed-ods/@@preview HTTP/1.1
+  ... Authorization: Basic mgr:mgrpw
+  ... """, handle_errors=False)
+  HTTP/1.1 200 Ok
+  Content-Disposition: inline; filename="abcdefg"
+  Content-Length: 16801
+  Content-Type: application/x-shockwave-flash
+  Last-Modified: ...
+  <BLANKLINE>
+  CWS ...
+
+TXT
+
+  >>> from zojax.filefield import tests
+  >>> import os.path
+  >>> f = File()
+  >>> f.mimeType = "text/plain"
+  >>> f.filename = 'abcdefg'
+  >>> w = f.open("w")
+  >>> w.write(open(os.path.join(os.path.dirname(tests.__file__), "test.txt")).read())
+  >>> w.close()
+  >>> transaction.commit()
+
+  >>> getRootFolder()["previewed-txt"] = f
+
+  >>> transaction.commit()
+
+Now, let's request the download view of the file object and check the
+result:
+
+  >>> print http("""
+  ... GET /previewed-txt/@@preview HTTP/1.1
+  ... Authorization: Basic mgr:mgrpw
+  ... """, handle_errors=False)
+  HTTP/1.1 200 Ok
+  Content-Disposition: inline; filename="abcdefg"
+  Content-Length: ...
+  Content-Type: application/x-shockwave-flash
+  Last-Modified: ...
+  <BLANKLINE>
+  CWS ...
+
