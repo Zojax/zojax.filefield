@@ -84,7 +84,7 @@ class File(Persistent):
     def previewIsAvailable(self):
         try:
             self.generatePreview()
-            return bool(self.previewSize())
+            return bool(self.previewSize)
         except ConverterException:
             return False
 
