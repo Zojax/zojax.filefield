@@ -25,7 +25,7 @@
     }
 </script>
 
-<script type="text/javascript" tal:content="string: var preview_url='preview'; viewer_url='${context/++resource++filefield/FlexPaperViewer.swf}'">
+<script type="text/javascript" tal:content="string: var preview_url=$('HEAD').attr('base') + 'preview'; viewer_url='${context/++resource++filefield/FlexPaperViewer.swf}'">
 </script>
 
 <script type="text/javascript">
