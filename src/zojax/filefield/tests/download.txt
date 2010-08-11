@@ -437,3 +437,33 @@ result:
   <BLANKLINE>
   CWS ...
 
+GIF
+
+  >>> from zojax.filefield import tests
+  >>> import os.path
+  >>> f = File()
+  >>> f.mimeType = "image/gif"
+  >>> f.filename = 'abcdefg'
+  >>> w = f.open("w")
+  >>> w.write(open(os.path.join(os.path.dirname(tests.__file__), "image.gif")).read())
+  >>> w.close()
+  >>> transaction.commit()
+
+  >>> getRootFolder()["previewed-gif"] = f
+
+  >>> transaction.commit()
+
+Now, let's request the download view of the file object and check the
+result:
+
+  >>> print http("""
+  ... GET /previewed-txt/@@preview HTTP/1.1
+  ... Authorization: Basic mgr:mgrpw
+  ... """, handle_errors=False)
+  HTTP/1.1 200 Ok
+  Content-Disposition: inline; filename="abcdefg"
+  Content-Length: ...
+  Content-Type: application/x-shockwave-flash
+  Last-Modified: ...
+  <BLANKLINE>
+  CWS ...
