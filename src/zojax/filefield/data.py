@@ -247,7 +247,7 @@ class File(Persistent):
         fp = self.openPreview('w')
         ff = self.open()
         try:
-            fp.write(api.convert(ff, 'application/x-shockwave-flash', self.mimeType))
+            fp.write(api.convert(ff, 'application/x-shockwave-flash', self.mimeType, filename=self.filename))
         except ConverterException, e:
             logger.warning('Error generating preview: %s', e)
         finally:
