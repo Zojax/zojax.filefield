@@ -57,7 +57,7 @@
     attributes.name = "FlexPaperViewer";
     swfobject.embedSWF(
         viewer_url, "flashContent",
-        "600", "500",
+        "100%", "480px",
         swfVersionStr, xiSwfUrlStr,
         flashvars, params, attributes);
     swfobject.createCSS("#flashContent", "display:block;text-align:left;");
