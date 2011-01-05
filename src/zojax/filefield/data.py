@@ -378,9 +378,9 @@ class FileTraverser(object):
             request.response.setHeader(
                 'Cache-Control', 'public, max-age=31536000')
             request.response.setHeader(
-                'Expires', u"Fri, 01 Jan, 2100 01:01:01 GMT")
+                'Expires', u"Fri, 01 Jan 2100 01:01:01 GMT")
             request.response.setHeader(
-                'Last-Modified', u"Sat, 01 Jan, 2000 01:01:01 GMT")
+                'Last-Modified', u"Sat, 01 Jan 2000 01:01:01 GMT")
 
         return getMultiAdapter((self.context, request), name='index.html')
 
