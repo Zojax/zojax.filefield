@@ -64,7 +64,7 @@ class FileWidget(file.FileWidget):
             self.canUnload = False
 
         if self.canUnload:
-            name = '%s_unload'%field.__name__
+            name = '%s_unload'%self.name
             self.unload = schema.Bool(
                 __name__ = name,
                 title = _(u"Remove"),
