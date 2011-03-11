@@ -204,7 +204,7 @@ class File(Persistent):
             return DownloadResult(self)
         
     def showFly(self, *kv, **kw):
-        res = super(File, self).show(*kv, **kw)
+        res = self.show(*kv, **kw)
         if res:
             return DownloadResultFly(self)
         return res
@@ -250,7 +250,7 @@ class File(Persistent):
             return DownloadPreviewResult(self)
         
     def showPreviewFly(self, *kv, **kw):
-        res = super(File, self).showPreview(*kv, **kw)
+        res = self.showPreview(*kv, **kw)
         if res:
             return DownloadPreviewResultFly(self)
         return res
