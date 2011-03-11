@@ -11,7 +11,6 @@
 # FOR A PARTICULAR PURPOSE.
 #
 ##############################################################################
-from zojax.converter.interfaces import ConverterException
 """
 
 $Id$
@@ -35,6 +34,7 @@ from zope.publisher.interfaces import IPublishTraverse
 
 from zojax.converter import api
 from zojax.resourcepackage import library
+from zojax.converter.interfaces import ConverterException
 
 from interfaces import IFile, IImage, IFileData
 from interfaces import IFileDataClear, IFileDataNoValue, OO_CONVERTER_EXECUTABLE, \
@@ -202,6 +202,12 @@ class File(Persistent):
             return ''
         else:
             return DownloadResult(self)
+        
+    def showFly(self, *kv, **kw):
+        res = super(File, self).show(*kv, **kw)
+        if res:
+            return DownloadResultFly(self)
+        return res
 
     def showPreview(self, request, filename=None, contentDisposition="inline"):
         response = request.response
@@ -242,6 +248,12 @@ class File(Persistent):
             return ''
         else:
             return DownloadPreviewResult(self)
+        
+    def showPreviewFly(self, *kv, **kw):
+        res = super(File, self).showPreview(*kv, **kw)
+        if res:
+            return DownloadPreviewResultFly(self)
+        return res
 
     def generatePreview(self):
         fp = self.openPreview('w')
@@ -393,6 +405,13 @@ class DownloadResult(object):
 
     def __iter__(self):
         return self._iter
+    
+
+class DownloadResultFly(DownloadResult):
+
+    def __init__(self, context):
+        self._iter = bodyIterator(context.open())
+
 
 class DownloadPreviewResult(object):
     interface.implements(IResult)
@@ -402,7 +421,13 @@ class DownloadPreviewResult(object):
 
     def __iter__(self):
         return self._iter
+    
 
+class DownloadPreviewResultFly(DownloadPreviewResult):
+
+    def __init__(self, context):
+        self._iter = bodyIterator(context.openPreview())
+        
 
 CHUNK_SIZE = 64 * 1024
 
