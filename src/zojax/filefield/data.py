@@ -164,7 +164,7 @@ class File(Persistent):
     def openPreviewDetached(self):
         return file(self._previewBlob.committed(), 'rb')
 
-    def show(self, request, filename=None, contentDisposition="inline"):
+    def _show(self, request, filename=None, contentDisposition="inline"):
         response = request.response
 
         if not self.mimeType:
@@ -201,15 +201,21 @@ class File(Persistent):
             response.setHeader('Content-Type', 'text/plain')
             return ''
         else:
+            return self
+        
+    def show(self, *kv, **kw):
+        res = self._show(*kv, **kw)
+        if res != '':
             return DownloadResult(self)
+        return res
         
     def showFly(self, *kv, **kw):
-        res = self.show(*kv, **kw)
-        if res:
+        res = self._show(*kv, **kw)
+        if res != '':
             return DownloadResultFly(self)
         return res
 
-    def showPreview(self, request, filename=None, contentDisposition="inline"):
+    def _showPreview(self, request, filename=None, contentDisposition="inline"):
         response = request.response
 
         if self.size and not self.previewSize:
@@ -247,11 +253,17 @@ class File(Persistent):
             response.setHeader('Content-Type', 'text/plain')
             return ''
         else:
+            return self
+        
+    def showPreview(self, *kv, **kw):
+        res = self._showPreview(*kv, **kw)
+        if res != '':
             return DownloadPreviewResult(self)
+        return res
         
     def showPreviewFly(self, *kv, **kw):
-        res = self.showPreview(*kv, **kw)
-        if res:
+        res = self._showPreview(*kv, **kw)
+        if res != '':
             return DownloadPreviewResultFly(self)
         return res
 

@@ -26,6 +26,14 @@
   <class class=".data.DownloadPreviewResult">
     <allow interface="zope.publisher.interfaces.http.IResult" />
   </class>
+  
+  <class class=".data.DownloadResultFly">
+    <allow interface="zope.publisher.interfaces.http.IResult" />
+  </class>
+
+  <class class=".data.DownloadPreviewResultFly">
+    <allow interface="zope.publisher.interfaces.http.IResult" />
+  </class>
 
   <!-- Image -->
   <class class=".data.Image">
