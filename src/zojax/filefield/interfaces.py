@@ -128,9 +128,15 @@ class IFile(interface.Interface):
         """ clear all data """
 
     def show(request, filename=None):
+        """ show file committed"""
+    
+    def showFly(request, filename=None):
         """ show file """
 
     def showPreview(request, filename=None):
+        """ show preview of the file committed"""
+    
+    def showPreviewFly(request, filename=None):
         """ show preview of the file """
 
     def __len__(self):
