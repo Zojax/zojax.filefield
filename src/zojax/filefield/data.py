@@ -11,6 +11,8 @@
 # FOR A PARTICULAR PURPOSE.
 #
 ##############################################################################
+from zope.size import byteDisplay
+from zope.size.interfaces import ISized
 """
 
 $Id$
@@ -318,6 +320,22 @@ class Image(File):
         reader = self.open()
         self.width, self.height = getImageSize(reader)
         reader.close()
+
+
+class FileSized(object):
+    component.adapts(IFile)
+    interface.implements(ISized)
+
+    def __init__(self, context):
+        self.context = context
+
+        self.size = self.context.size
+
+    def sizeForSorting(self):
+        return "byte", self.size
+
+    def sizeForDisplay(self):
+        return byteDisplay(self.size)
 
 
 class FileDataClear(object):

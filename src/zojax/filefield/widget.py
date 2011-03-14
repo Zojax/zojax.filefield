@@ -41,8 +41,6 @@ def FileFieldWidget(field, request):
 class FileWidget(file.FileWidget):
     interface.implements(IFileWidget)
 
-    unload_template = ViewPageTemplateFile('widget.pt')
-
     rows = 10
     klass = 'file-widget'
 
@@ -82,15 +80,7 @@ class FileWidget(file.FileWidget):
 
         super(FileWidget, self).update()
 
-    def render(self):
-        filewidget = super(FileWidget, self).render()
-
-        if self.canUnload:
-            return filewidget + self.unload_template()
-        else:
-            return filewidget
-
-    def extract(self, default=fileDataNoValue):#interfaces.NOVALUE):
+    def extract(self, default=interfaces.NOVALUE):
         fileUpload = self.request.get(self.name, default)
 
         if self.canUnload:
@@ -147,10 +137,21 @@ class FileWidgetDataConverter(converter.BaseDataConverter):
     def toFieldValue(self, value):
         if IFileData.providedBy(value) or \
                IFileDataClear.providedBy(value) or \
-               IFileDataNoValue.providedBy(value):
+               IFileDataNoValue.providedBy(value) or \
+               IFile:
             return value
+        
+        if value is None or value == '':
+            # When no new file is uploaded, send a signal that we do not want
+            # to do anything special.
+            return interfaces.NOT_CHANGED
 
         return FileData(value)
+    
+    def toWidgetValue(self, value):
+        """See interfaces.IDataConverter"""
+        #raise Exception(value)
+        return value
 
 
 class FileFieldValidator(validator.SimpleFieldValidator):

@@ -19,6 +19,9 @@ from zope import interface, schema
 from zope.schema.interfaces import IField
 from zope.i18nmessageid import MessageFactory
 
+from z3c.form.interfaces import IFileWidget as IFileWidgetBase
+
+
 _ = MessageFactory('zojax')
 
 OO_CONVERTER_EXECUTABLE = 'unoconv'
@@ -185,5 +188,5 @@ class IFileDataNoValue(interface.Interface):
     """ no value """
 
 
-class IFileWidget(interface.Interface):
+class IFileWidget(IFileWidgetBase):
     """ file field widget """
