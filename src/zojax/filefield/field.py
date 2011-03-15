@@ -195,6 +195,7 @@ class ImageField(schema.MinMaxLen, schema.Field):
             self.set(object, FileData(value), _getattr, _setattr)
 
     def _validate(self, value):
+        raise Exception(value)
         if IFileDataNoValue.providedBy(value) and self.required:
             raise RequiredMissing()
 
