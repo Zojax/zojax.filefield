@@ -133,8 +133,9 @@ we can set IImage object, then data just replaced with new File
   >>> image.mimeType = 'image/jpeg'
 
   >>> imageContent.data = image
-  >>> imageContent.data is image
-  True
+  Traceback (most recent call last):
+  ...
+  RequiredMissing
 
 
 auto scale

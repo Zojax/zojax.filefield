@@ -129,8 +129,9 @@ non zero
 --------
 
   >>> fileContent.data = FileData('', mimeType='text/html')
-  >>> bool(fileContent.data)
-  False
+  Traceback (most recent call last):
+  ...
+  RequiredMissing
 
   >>> fileContent.data = FileData('test', mimeType='text/html')
   >>> bool(fileContent.data)

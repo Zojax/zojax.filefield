@@ -2,18 +2,32 @@
 File Widget
 ===========
 
-  >>> from zojax.filefield.field import FileField
+  >>> from zope import interface
+  >>> from zojax.filefield.field import FileField, FileFieldProperty
   >>> from zojax.filefield.interfaces import IFileWidget, IFileDataNoValue
   >>> from zojax.filefield import widget as widgetMod
 
   >>> from z3c.form import interfaces
   >>> from z3c.form.testing import TestRequest
   >>> request = TestRequest()
+  
+  >>> class IFileContent(interface.Interface):
+  ...     data = FileField(
+  ...         title = u'Date',
+  ...         required = True)
+
+  >>> class FileContent(object):
+  ...     interface.implements(IFileContent)
+  ...     data = FileFieldProperty(IFileContent['data'])
+
+  >>> fileContent = FileContent()
 
   >>> field = FileField(
   ...     __name__ = 'data',
   ...     title = u'Title',
   ...     required = False)
+
+  >>> field = field.bind(fileContent)
 
   >>> widget = widgetMod.FileFieldWidget(field, request)
   >>> widget.id = 'widget.id'
@@ -44,8 +58,8 @@ Empty widget
 
   >>> widget.request = TestRequest()
   >>> widget.update()
-  >>> IFileDataNoValue.providedBy(widget.extract())
-  True
+  >>> widget.extract()
+  <NO_VALUE>
 
 Load file
 
@@ -75,9 +89,6 @@ Unload option is not available for add form and for required field
 ============
 Data Manager
 ============
-
-  >>> from zope import interface
-  >>> from zojax.filefield.field import FileField, FileFieldProperty
 
   >>> class IFileContent(interface.Interface):
   ...     data = FileField(

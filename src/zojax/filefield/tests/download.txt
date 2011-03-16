@@ -177,7 +177,7 @@ ODT
   >>> import os.path
   >>> f = File()
   >>> f.mimeType = "application/vnd.oasis.opendocument.text"
-  >>> f.filename = 'abcdefg'
+  >>> f.filename = 'abcdefg.odt'
   >>> w = f.open("w")
   >>> w.write(open(os.path.join(os.path.dirname(tests.__file__), "test.odt")).read())
   >>> w.close()
@@ -195,7 +195,7 @@ result:
   ... Authorization: Basic mgr:mgrpw
   ... """, handle_errors=False)
   HTTP/1.1 200 Ok
-  Content-Disposition: inline; filename="abcdefg"
+  Content-Disposition: inline; filename="abcdefg.odt"
   Content-Length: 746
   Content-Type: application/x-shockwave-flash
   Last-Modified: ...
@@ -210,77 +210,13 @@ result:
   <script type="text/javascript" src=".../jquery-plugins.js"></script>
   ...
   </head>
-     <body>
-      <div id="z-portal-workspace"><div id="z-portal-viewspace"><div id="z-content"><script type="text/javascript">
-      if(window.addEventListener)
-      window.addEventListener('DOMMouseScroll', handleWheel, false);
-      window.onmousewheel = document.onmousewheel = handleWheel;
-      if (window.attachEvent)
-      window.attachEvent("onmousewheel", handleWheel);
-      function handleWheel(event){
-          try{
-              if(!window.document.FlexPaperViewer.hasFocus()){return true;}
-              window.document.FlexPaperViewer.setViewerFocus(true);
-              window.document.FlexPaperViewer.focus();
-              if(navigator.appName == "Netscape"){
-                  if (event.detail)
-                      delta = 0;
-                  if (event.preventDefault){
-                      event.preventDefault();
-                      event.returnValue = false;
-                      }
-              }
-              return false;
-          }catch(err){return true;}
-      }
-  </script><script type="text/javascript"> var preview_url='preview'; viewer_url='http://localhost/@@/filefield/FlexPaperViewer.swf'</script><script type="text/javascript">
-      <!-- For version detection, set to min. required Flash Player version, or 0 (or 0.0.0), for no version detection. -->
-      var swfVersionStr = "9.0.124";
-      <!-- To use express install, set to playerProductInstall.swf, otherwise the empty string. -->
-      var xiSwfUrlStr = "${expressInstallSwf}";
-      var flashvars = {
-            SwfFile : escape(preview_url),
-            Scale : 0.6,
-            ZoomTransition : "easeOut",
-            ZoomTime : 0.5,
-            ZoomInterval : 0.1,
-            FitPageOnLoad : false,
-            FitWidthOnLoad : true,
-            PrintEnabled : true,
-            FullScreenAsMaxWindow : true,
-            ProgressiveLoading : true,
-            localeChain: "en_US"
-            };
-       var params = {
-  <BLANKLINE>
-          }
-      params.quality = "high";
-      params.bgcolor = "#ffffff";
-      params.allowfullscreen = "true";
-      var attributes = {};
-      attributes.id = "FlexPaperViewer";
-      attributes.name = "FlexPaperViewer";
-      swfobject.embedSWF(
-          viewer_url, "flashContent",
-          "600", "500",
-          swfVersionStr, xiSwfUrlStr,
-          flashvars, params, attributes);
-      swfobject.createCSS("#flashContent", "display:block;text-align:left;");
-  </script><div id="flashContent">
-      <p>
-          To view this page ensure that Adobe Flash Player version
-          9.0.124 or greater is installed.
-      </p>
-  <![CDATA[
-      <script type="text/javascript">
-              var pageHost = ((document.location.protocol == "https:") ? "https://" : "http://");
-              document.write("<a href='http://www.adobe.com/go/getflashplayer'><img src='"
-                              + pageHost + "www.adobe.com/images/shared/download_buttons/get_flash_player.gif' alt='Get Adobe Flash player' /></a>" );
-          </script>
-      ]]>
-  </div></div></div></div>
-  </body>
-  </html>
+  <body>
+    ...
+    ...<script type="text/javascript"> var preview_url=$('HEAD').attr('base') + 'preview'; viewer_url='http://localhost/@@/filefield/FlexPaperViewer.swf'</script>...
+    ...
+    </body>
+    </html>
+
 
 RTF
 
@@ -288,7 +224,7 @@ RTF
   >>> import os.path
   >>> f = File()
   >>> f.mimeType = "application/rtf"
-  >>> f.filename = 'abcdefg'
+  >>> f.filename = 'abcdefg.rtf'
   >>> w = f.open("w")
   >>> w.write(open(os.path.join(os.path.dirname(tests.__file__), "test.rtf")).read())
   >>> w.close()
@@ -306,8 +242,8 @@ result:
   ... Authorization: Basic mgr:mgrpw
   ... """, handle_errors=False)
   HTTP/1.1 200 Ok
-  Content-Disposition: inline; filename="abcdefg"
-  Content-Length: 768
+  Content-Disposition: inline; filename="abcdefg.rtf"
+  Content-Length: 769
   Content-Type: application/x-shockwave-flash
   Last-Modified: ...
   <BLANKLINE>
@@ -319,7 +255,7 @@ XLS
   >>> import os.path
   >>> f = File()
   >>> f.mimeType = "application/vnd.ms-excel"
-  >>> f.filename = 'abcdefg'
+  >>> f.filename = 'abcdefg.xls'
   >>> w = f.open("w")
   >>> w.write(open(os.path.join(os.path.dirname(tests.__file__), "test.xls")).read())
   >>> w.close()
@@ -337,8 +273,8 @@ result:
   ... Authorization: Basic mgr:mgrpw
   ... """, handle_errors=False)
   HTTP/1.1 200 Ok
-  Content-Disposition: inline; filename="abcdefg"
-  Content-Length: 20581
+  Content-Disposition: inline; filename="abcdefg.xls"
+  Content-Length: 20718
   Content-Type: application/x-shockwave-flash
   Last-Modified: ...
   <BLANKLINE>
@@ -350,7 +286,7 @@ XLSX
   >>> import os.path
   >>> f = File()
   >>> f.mimeType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-  >>> f.filename = 'abcdefg'
+  >>> f.filename = 'abcdefg.xlsx'
   >>> w = f.open("w")
   >>> w.write(open(os.path.join(os.path.dirname(tests.__file__), "test.xlsx")).read())
   >>> w.close()
@@ -368,8 +304,8 @@ result:
   ... Authorization: Basic mgr:mgrpw
   ... """, handle_errors=False)
   HTTP/1.1 200 Ok
-  Content-Disposition: inline; filename="abcdefg"
-  Content-Length: 20581
+  Content-Disposition: inline; filename="abcdefg.xlsx"
+  Content-Length: 20688
   Content-Type: application/x-shockwave-flash
   Last-Modified: ...
   <BLANKLINE>
@@ -381,7 +317,7 @@ ODS
   >>> import os.path
   >>> f = File()
   >>> f.mimeType = "application/vnd.oasis.opendocument.spreadsheet"
-  >>> f.filename = 'abcdefg'
+  >>> f.filename = 'abcdefg.ods'
   >>> w = f.open("w")
   >>> w.write(open(os.path.join(os.path.dirname(tests.__file__), "test.ods")).read())
   >>> w.close()
@@ -399,12 +335,13 @@ result:
   ... Authorization: Basic mgr:mgrpw
   ... """, handle_errors=False)
   HTTP/1.1 200 Ok
-  Content-Disposition: inline; filename="abcdefg"
-  Content-Length: 16801
+  Content-Disposition: inline; filename="abcdefg.ods"
+  Content-Length: 16892
   Content-Type: application/x-shockwave-flash
   Last-Modified: ...
   <BLANKLINE>
   CWS ...
+  
 
 TXT
 

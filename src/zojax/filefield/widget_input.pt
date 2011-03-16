@@ -1,8 +1,8 @@
 <html xmlns="http://www.w3.org/1999/xhtml"
       xmlns:tal="http://xml.zope.org/namespaces/tal"
       tal:omit-tag="">
-<div>
-  <tal:block condition="view/value">Current: <tal:block content="view/value/filename" /> (<tal:block content="formatter:size,medium:view/value" />)<tal:block condition="view/value/previewIsAvailable">,&nbsp;</tal:block><a tal:attributes="href string:${request/URL}/++widgets++${view/name}/++attribute++value">Preview</a></tal:block>
+<div tal:condition="view/value">
+  Current: <tal:block content="view/value/filename" /> (<tal:block content="formatter:size,medium:view/value" />)<tal:block condition="view/value/previewIsAvailable">,&nbsp;</tal:block><a tal:attributes="href string:${request/URL}/++widgets++${view/name}/++attribute++value">Preview</a>
 </div>
 <tal:block tal:condition="view/canUnload">
 <div class="z-form-field"

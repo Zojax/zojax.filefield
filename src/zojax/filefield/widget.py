@@ -11,13 +11,14 @@
 # FOR A PARTICULAR PURPOSE.
 #
 ##############################################################################
+from zope.component.interfaces import ComponentLookupError
 """
 
 $Id$
 """
 from types import FileType
 from zope import schema, component, interface
-from zope.component import getMultiAdapter
+from zope.component import getMultiAdapter, queryMultiAdapter
 from zope.publisher.browser import FileUpload
 from zope.security.proxy import removeSecurityProxy
 from zope.app.pagetemplate import ViewPageTemplateFile
@@ -52,12 +53,15 @@ class FileWidget(file.FileWidget):
         canUnload = not self.ignoreContext and not field.required
 
         if canUnload:
-            value = getMultiAdapter((self.context, field),
-                                    interfaces.IDataManager).query()
-            if value is interfaces.NOVALUE:
+            try:
+                value = getMultiAdapter((self.context, field),
+                                        interfaces.IDataManager).query()
+                if value is interfaces.NOVALUE:
+                    self.canUnload = False
+                else:
+                    self.canUnload = bool(value)
+            except ComponentLookupError:
                 self.canUnload = False
-            else:
-                self.canUnload = bool(value)
         else:
             self.canUnload = False
 
