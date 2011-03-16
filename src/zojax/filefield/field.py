@@ -195,21 +195,11 @@ class ImageField(schema.MinMaxLen, schema.Field):
             self.set(object, FileData(value), _getattr, _setattr)
 
     def _validate(self, value):
-        if (IFileDataNoValue.providedBy(value) or not value) and self.required:
-            raise RequiredMissing()
-
-        if IFileDataClear.providedBy(value) or \
-                IFileDataNoValue.providedBy(value):
-            return
-
+     
         super(ImageField, self)._validate(value)
 
         if not (IImage.providedBy(value) or IFileData.providedBy(value)):
             raise WrongType(value, (IImage, IFileData))
-
-        if self.mimeTypes:
-            if value.mimeType not in self.mimeTypes:
-                raise NotAllowedFileType(value.mimeType, self.mimeTypes)
 
         if not self.scale and (self.maxWidth > 0 or self.maxHeight > 0):
             if IImage.providedBy(value):
