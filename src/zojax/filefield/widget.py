@@ -125,7 +125,7 @@ class FileFieldDataManager(datamanager.AttributeField):
                 IFileData.providedBy(value) or
                 IFileDataClear.providedBy(value)):
             return
-
+        
         # get the right adapter or context
         context = removeSecurityProxy(self.context)
         if self.field.interface is not None:
