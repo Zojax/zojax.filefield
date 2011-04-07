@@ -84,6 +84,8 @@ class File(Persistent):
 
     @getproperty
     def previewIsAvailable(self):
+        if self.previewSize:
+            return True
         try:
             self.generatePreview()
             return bool(self.previewSize)
@@ -113,12 +115,10 @@ class File(Persistent):
         if 'previewSize' in self.__dict__:
             return self.__dict__['previewSize']
         else:
-            reader = self.openPreview()
             try:
-                reader.seek(0,2)
-                size = int(reader.tell())
-            finally:
-                reader.close()
+                size = self.generatePreview()
+            except ConverterException:
+                size = 0
             self.__dict__['previewSize'] = size
             return size
 
@@ -138,7 +138,7 @@ class File(Persistent):
         return self.size > 0
 
     def clear(self):
-        self.fielname = u''
+        self.filename = u''
         self.mimeType = u''
         self.data = u''
 
@@ -148,7 +148,7 @@ class File(Persistent):
                 del self.__dict__['size']
             if 'previewSize' in self.__dict__:
                 del self.__dict__['previewSize']
-
+            self.modified = zope.datetime.parseDatetimetz(str(datetime.now()))
         return self._blob.open(mode)
 
     def openPreview(self, mode="r"):
@@ -180,7 +180,7 @@ class File(Persistent):
 
         header = request.getHeader('If-Modified-Since', None)
 
-        lmt = long(rfc822.mktime_tz(modified.utctimetuple() + (0,)))
+        lmt = long(zope.datetime.time(modified.isoformat()))
 
         if header is not None:
             header = header.split(';')[0]
@@ -272,13 +272,16 @@ class File(Persistent):
     def generatePreview(self):
         fp = self.openPreview('w')
         ff = self.open()
+        size = 0
         try:
             fp.write(api.convert(ff, 'application/x-shockwave-flash', self.mimeType, filename=self.filename))
+            size = int(fp.tell())
         except ConverterException, e:
             logger.warning('Error generating preview: %s', e)
         finally:
             ff.close()
             fp.close()
+            return size
 
     def __deepcopy__(self, memo):
         new = File()
@@ -298,7 +301,7 @@ class Image(File):
     @setproperty
     def data(self, data):
         self.size = len(data)
-        self.modified = datetime.now(pytz.utc)
+        self.modified = zope.datetime.parseDatetimetz(str(datetime.now()))
         self.width, self.height = getImageSize(data)
         fp = self.open('w')
         fp.write(data)
