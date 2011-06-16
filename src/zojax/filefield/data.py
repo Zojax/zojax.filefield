@@ -13,6 +13,7 @@
 ##############################################################################
 from zope.size import byteDisplay
 from zope.size.interfaces import ISized
+from ZODB.interfaces import BlobError
 """
 
 $Id$
@@ -53,6 +54,7 @@ class File(Persistent):
     filename = u'file'
     mimeType = u''
     modified = None
+    __previewSize = None
 
     def __init__(self):
         self._blob = Blob()
@@ -112,14 +114,14 @@ class File(Persistent):
 
     @getproperty
     def previewSize(self):
-        if 'previewSize' in self.__dict__:
-            return self.__dict__['previewSize']
+        if self.__previewSize is not None:
+            return self.__previewSize
         else:
             try:
                 size = self.generatePreview()
             except ConverterException:
                 size = 0
-            self.__dict__['previewSize'] = size
+            self.__previewSize = size
             return size
 
     @Lazy
@@ -161,10 +163,18 @@ class File(Persistent):
             return self._previewBlob.open(mode)
 
     def openDetached(self):
-        return file(self._blob.committed(), 'rb')
+        try:
+            return file(self._blob.committed(), 'rb')
+        except BlobError:
+            transaction.commit()
+            return self.openDetached()
 
     def openPreviewDetached(self):
-        return file(self._previewBlob.committed(), 'rb')
+        try:
+            return file(self._previewBlob.committed(), 'rb')
+        except BlobError:
+            transaction.commit()
+            return self.openPreviewDetached()
 
     def _show(self, request, filename=None, contentDisposition="inline"):
         response = request.response
@@ -219,7 +229,6 @@ class File(Persistent):
 
     def _showPreview(self, request, filename=None, contentDisposition="inline"):
         response = request.response
-
         if self.size and not self.previewSize:
             self.generatePreview()
             transaction.commit()
