@@ -175,8 +175,8 @@ class IImage(IFile):
         """ update image dimenion,
         usually called after image.open('wb').write() """
 
-    def __bind__(self, context):        
-        """ __bind__ """
+    def bind(self, context):        
+        """ bind to the field """
 
 
 class IFileData(interface.Interface):

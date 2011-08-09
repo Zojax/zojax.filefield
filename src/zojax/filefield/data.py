@@ -306,6 +306,7 @@ class Image(File):
 
     width = -1
     height = -1
+    _v_context = None
 
     @setproperty
     def data(self, data):
@@ -363,8 +364,9 @@ class Image(File):
         thumbs[name] = thumb
         return thumbs[name]
 
-    def __bind__(self, context):
+    def bind(self, context):
         self._v_context = context
+        return self
 
 
 class FileSized(object):
@@ -419,6 +421,7 @@ class FileData(object):
 
         file.seek(0,2)
         self.size = int(file.tell())
+        file.seek(0)
 
         if mimeType is None:
             mimeType = api.guessMimetype(file, self.filename)[0]

@@ -146,7 +146,7 @@ class ImageField(schema.MinMaxLen, schema.Field):
     def get(self, object, _getattr=getattr, _setattr=setattr):
         value = _getattr(object, self.__name__, None)
         if IImage.providedBy(value):
-            return value.__bind__(self)
+            return value.bind(self)
         elif IFile.providedBy(value):
             self.set(object, value.data, _getattr, _setattr)
             return self.get(object, _getattr, _setattr)
