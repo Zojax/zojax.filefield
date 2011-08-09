@@ -19,6 +19,7 @@ from persistent.interfaces import IPersistent
 
 from zope import interface, schema
 from zope.schema.interfaces import RequiredMissing, WrongType
+from zope.schema.fieldproperty import FieldProperty
 from zope.security.proxy import removeSecurityProxy
 from zope.publisher.browser import FileUpload
 
@@ -133,6 +134,7 @@ class ImageField(schema.MinMaxLen, schema.Field):
     interface.implements(IBlobDataField, IImageField)
 
     mimeTypes = ('image/jpeg', 'image/gif', 'image/png')
+    thumbSizes = FieldProperty(IImageField['thumbSizes'])
 
     def __init__(self, scale=False, maxWidth=0, maxHeight=0, **kw):
         super(ImageField, self).__init__(**kw)
@@ -144,7 +146,7 @@ class ImageField(schema.MinMaxLen, schema.Field):
     def get(self, object, _getattr=getattr, _setattr=setattr):
         value = _getattr(object, self.__name__, None)
         if IImage.providedBy(value):
-            return value
+            return value.__bind__(self)
         elif IFile.providedBy(value):
             self.set(object, value.data, _getattr, _setattr)
             return self.get(object, _getattr, _setattr)

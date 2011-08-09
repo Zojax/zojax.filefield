@@ -87,6 +87,13 @@ class IImageField(IField):
         title = u'Max height',
         required = False)
 
+    thumbSizes = schema.Dict(
+        title=u'Thumb Sizes',
+        key_type=schema.TextLine(),
+        value_type=schema.Tuple(),
+        default={'large' : (768, 768),
+                  'icon'  : (32, 32),})
+
 
 class IFile(interface.Interface):
 
@@ -159,12 +166,17 @@ class IImage(IFile):
         title = _(u'Height'),
         required = True)
 
+    thumbs = interface.Attribute('Thumbs')
+
     def scale(width, height, quality=88):
         """ scale image """
 
     def updateDimension():
         """ update image dimenion,
         usually called after image.open('wb').write() """
+
+    def __bind__(self, context):        
+        """ __bind__ """
 
 
 class IFileData(interface.Interface):

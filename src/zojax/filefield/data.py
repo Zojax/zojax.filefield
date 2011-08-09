@@ -333,6 +333,39 @@ class Image(File):
         self.width, self.height = getImageSize(reader)
         reader.close()
 
+    def generateThumb(self, width, height, mt='image/jpeg', quality=88):
+        """return previously created thumb or generate a new"""
+        thumbs = self.thumbs
+        name = '%sx%s'%(width, height)
+        if name in thumbs:
+            return thumbs[name]
+
+        image = self.data
+        mimeType = self.mimeType
+
+        if not image:
+            return
+
+        try:
+            data = convert(image, 'image/jpeg',
+                           sourceMimetype = mimeType,
+                           width=width, height=height, quality=quality)
+        except ConverterException:
+            logger.warning('Conversion Error:', exc_info=True)
+            return
+
+        thumb = File()
+        thumb.data = data
+        thumb.filename = name
+        thumb.mimeType = u'image/jpeg'
+        event.notify(ObjectCreatedEvent(thumb))
+
+        thumbs[name] = thumb
+        return thumbs[name]
+
+    def __bind__(self, context):
+        self._v_context = context
+
 
 class FileSized(object):
     component.adapts(IFile)
