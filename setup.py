@@ -76,6 +76,7 @@ setup(name = 'zojax.filefield',
                                   'zope.securitypolicy',
                                   'zope.app.zcmlfiles',
                                   'zojax.autoinclude',
+                                  'zojax.formatter [test]'
                                   ]),
       include_package_data = True,
       zip_safe = False

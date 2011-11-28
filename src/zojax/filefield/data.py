@@ -114,7 +114,7 @@ class File(Persistent):
 
     @getproperty
     def previewSize(self):
-        if self.__previewSize is not None:
+        if self.__previewSize is not None and self.__previewSize:
             return self.__previewSize
         else:
             try:
@@ -162,19 +162,21 @@ class File(Persistent):
             self._previewBlob = Blob()
             return self._previewBlob.open(mode)
 
-    def openDetached(self):
+    def openDetached(self, n=0):
         try:
             return file(self._blob.committed(), 'rb')
         except BlobError:
-            transaction.commit()
-            return self.openDetached()
+            if n < 2:
+                transaction.commit()
+                return self.openDetached(n+1)
 
-    def openPreviewDetached(self):
+    def openPreviewDetached(self, n=0):
         try:
             return file(self._previewBlob.committed(), 'rb')
         except BlobError:
-            transaction.commit()
-            return self.openPreviewDetached()
+            if n < 2:
+                transaction.commit()
+                return self.openPreviewDetached(n+1)
 
     def _show(self, request, filename=None, contentDisposition="inline"):
         response = request.response
