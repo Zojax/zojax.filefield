@@ -54,7 +54,6 @@ class File(Persistent):
     filename = u'file'
     mimeType = u''
     modified = None
-    __previewSize = None
 
     def __init__(self):
         self._blob = Blob()
@@ -114,14 +113,14 @@ class File(Persistent):
 
     @getproperty
     def previewSize(self):
-        if self.__previewSize is not None and self.__previewSize:
-            return self.__previewSize
+        if 'previewSize' in self.__dict__:
+            return self.__dict__['previewSize']
         else:
             try:
                 size = self.generatePreview()
             except ConverterException:
                 size = 0
-            self.__previewSize = size
+            self.__dict__['previewSize'] = size
             return size
 
     @Lazy
