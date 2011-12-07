@@ -1,7 +1,7 @@
 <configure
    xmlns="http://namespaces.zope.org/zope"
    xmlns:browser="http://namespaces.zope.org/browser"
-   i18n_domain="zope">
+   i18n_domain="zojax.filefield">
 
   <include package="zojax.autoinclude" file="meta.zcml" />
   <includeAllDependencies package="zojax.filefield" extras="test" />

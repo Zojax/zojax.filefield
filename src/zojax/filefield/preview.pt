@@ -64,7 +64,7 @@
 </script>
 
 <div id="flashContent">
-    <p>
+    <p i18n:translate="">
         To view this page ensure that Adobe Flash Player version
         9.0.124 or greater is installed.
     </p>

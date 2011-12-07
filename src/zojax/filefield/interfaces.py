@@ -22,7 +22,7 @@ from zope.i18nmessageid import MessageFactory
 from z3c.form.interfaces import IFileWidget as IFileWidgetBase
 
 
-_ = MessageFactory('zojax')
+_ = MessageFactory('zojax.filefield')
 
 OO_CONVERTER_EXECUTABLE = 'unoconv'
 OO_CONVERTED_TYPES = ['application/vnd.oasis.opendocument.database',
