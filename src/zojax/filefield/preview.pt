@@ -57,12 +57,18 @@
     attributes.name = "FlexPaperViewer";
     swfobject.embedSWF(
         viewer_url, "flashContent",
-        "100%", "480px",
+        "100%", "100%",
         swfVersionStr, xiSwfUrlStr,
         flashvars, params, attributes);
-    swfobject.createCSS("#flashContent", "display:block;text-align:left;");
+    swfobject.createCSS("#flashContent", "display:block;text-align:left;min-height: 480px;");
 </script>
 
+<style>
+html, body, #flashContent, #flashContainer { height: 100%; width: 100%; }
+#flashContent, #flashContainer, #FlexPaperViewer { min-height: 480px; }
+</style>
+
+<div id="flashContainer">
 <div id="flashContent">
     <p i18n:translate="">
         To view this page ensure that Adobe Flash Player version
@@ -75,4 +81,5 @@
                           + pageHost + "www.adobe.com/images/shared/download_buttons/get_flash_player.gif' alt='Get Adobe Flash player' /></a>" );
       </script>
   ]]>
+</div>
 </div>
