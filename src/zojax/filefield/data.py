@@ -85,6 +85,12 @@ class File(Persistent):
 
     @getproperty
     def previewIsAvailable(self):
+
+        # NOTE: check size of existing preview:
+        existPreviewSize = len(self.previewData)
+        if existPreviewSize > 0:
+            return True
+
         if self.previewSize:
             return True
         try:
@@ -215,13 +221,13 @@ class File(Persistent):
             return ''
         else:
             return self
-        
+
     def show(self, *kv, **kw):
         res = self._show(*kv, **kw)
         if res != '':
             return DownloadResult(self)
         return res
-        
+
     def showFly(self, *kv, **kw):
         res = self._show(*kv, **kw)
         if res != '':
@@ -266,13 +272,13 @@ class File(Persistent):
             return ''
         else:
             return self
-        
+
     def showPreview(self, *kv, **kw):
         res = self._showPreview(*kv, **kw)
         if res != '':
             return DownloadPreviewResult(self)
         return res
-        
+
     def showPreviewFly(self, *kv, **kw):
         res = self._showPreview(*kv, **kw)
         if res != '':
@@ -448,7 +454,7 @@ class DownloadResult(object):
 
     def __iter__(self):
         return self._iter
-    
+
 
 class DownloadResultFly(DownloadResult):
 
@@ -464,13 +470,13 @@ class DownloadPreviewResult(object):
 
     def __iter__(self):
         return self._iter
-    
+
 
 class DownloadPreviewResultFly(DownloadPreviewResult):
 
     def __init__(self, context):
         self._iter = bodyIterator(context.openPreview())
-        
+
 
 CHUNK_SIZE = 64 * 1024
 
