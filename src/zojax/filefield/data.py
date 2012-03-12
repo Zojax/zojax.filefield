@@ -86,11 +86,6 @@ class File(Persistent):
     @getproperty
     def previewIsAvailable(self):
 
-        # NOTE: check size of existing preview:
-        existPreviewSize = len(self.previewData)
-        if existPreviewSize > 0:
-            return True
-
         if self.previewSize:
             return True
         try:

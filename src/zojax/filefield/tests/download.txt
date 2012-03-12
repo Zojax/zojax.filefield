@@ -128,10 +128,15 @@ result:
   ... Authorization: Basic mgr:mgrpw
   ... """, handle_errors=False)
   HTTP/1.1 200 Ok
+  Cache-Control: ...
   Content-Disposition: inline; filename="abcdefg"
   Content-Length: 9
   Content-Type: text/plain
+  Expires: ...
   Last-Modified: ...
+  Pragma: ...
+  Set-Cookie: ...
+  X-Generated-Time: ...
   <BLANKLINE>
   some text
 
@@ -164,12 +169,12 @@ result:
   ... """, handle_errors=False)
   HTTP/1.1 200 Ok
   Content-Disposition: inline; filename="abcdefg"
-  Content-Length: 708
+  Content-Length: 709
   Content-Type: application/x-shockwave-flash
   Last-Modified: ...
+  X-Generated-Time: ...
   <BLANKLINE>
   CWS ...
-
 
 ODT
 
@@ -341,7 +346,7 @@ result:
   Last-Modified: ...
   <BLANKLINE>
   CWS ...
-  
+
 
 TXT
 
