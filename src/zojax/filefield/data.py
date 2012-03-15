@@ -54,6 +54,7 @@ class File(Persistent):
     filename = u'file'
     mimeType = u''
     modified = None
+    rebuildPreview = False
 
     def __init__(self):
         self._blob = Blob()
@@ -86,7 +87,7 @@ class File(Persistent):
     @getproperty
     def previewIsAvailable(self):
 
-        if self.previewSize:
+        if self.previewSize and not self.rebuildPreview:
             return True
         try:
             self.generatePreview()
@@ -117,10 +118,12 @@ class File(Persistent):
         if 'previewSize' in self.__dict__:
             return self.__dict__['previewSize']
         else:
+            reader = self.openPreview()
             try:
-                size = self.generatePreview()
-            except ConverterException:
-                size = 0
+                reader.seek(0,2)
+                size = int(reader.tell())
+            finally:
+                reader.close()
             self.__dict__['previewSize'] = size
             return size
 
@@ -142,6 +145,7 @@ class File(Persistent):
     def clear(self):
         self.filename = u''
         self.mimeType = u''
+        self.rebuildPreview = False
         self.data = u''
 
     def open(self, mode="r"):
@@ -292,6 +296,8 @@ class File(Persistent):
         finally:
             ff.close()
             fp.close()
+
+            self.rebuildPreview = False
             return size
 
     def __deepcopy__(self, memo):
@@ -299,6 +305,7 @@ class File(Persistent):
         new.data = self.data
         new.filename = self.filename
         new.mimeType = self.mimeType
+        new.rebuildPreview = self.rebuildPreview
         new.generatePreview()
         return new
 
@@ -370,7 +377,7 @@ class FileData(object):
     """ widget data """
     interface.implements(IFileData)
 
-    def __init__(self, file=u'', filename=None, mimeType=None):
+    def __init__(self, file=u'', filename=None, mimeType=None, rebuildPreview=None):
         if file is None:
             file = u''
 
@@ -393,6 +400,11 @@ class FileData(object):
             mimeType = api.guessMimetype(file, self.filename)[0]
 
         self.mimeType = mimeType
+
+        if rebuildPreview is None:
+            rebuildPreview = True
+
+        self.rebuildPreview = rebuildPreview
 
     @property
     def data(self):

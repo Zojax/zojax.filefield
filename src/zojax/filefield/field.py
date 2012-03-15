@@ -86,12 +86,14 @@ class FileField(schema.MinMaxLen, schema.Field):
                 data.data = value.data
                 data.mimeType = value.mimeType
                 data.filename = value.filename
+                data.rebuildPreview = True
                 _setattr(object, self.__name__, data)
             else:
                 data = removeSecurityProxy(data)
                 data.data = value.data
                 data.mimeType = value.mimeType
                 data.filename = value.filename
+                data.rebuildPreview = True
                 _setattr(object, self.__name__, data)
         elif IFileDataClear.providedBy(value):
             data = _getattr(object, self.__name__, None)
