@@ -54,7 +54,6 @@ class File(Persistent):
     filename = u'file'
     mimeType = u''
     modified = None
-    rebuildPreview = False
 
     def __init__(self):
         self._blob = Blob()
@@ -86,14 +85,10 @@ class File(Persistent):
 
     @getproperty
     def previewIsAvailable(self):
-
-        if self.previewSize and not self.rebuildPreview:
+        if self.previewSize:
             return True
-        try:
-            self.generatePreview()
-            return bool(self.previewSize)
-        except ConverterException:
-            return False
+
+        return False
 
     @getproperty
     def size(self):
@@ -127,6 +122,10 @@ class File(Persistent):
             self.__dict__['previewSize'] = size
             return size
 
+    @setproperty
+    def previewSize(self, value):
+        self.__dict__['previewSize'] = value
+
     @Lazy
     def hash(self):
         fp = self._blob.open('r')
@@ -145,21 +144,16 @@ class File(Persistent):
     def clear(self):
         self.filename = u''
         self.mimeType = u''
-        self.rebuildPreview = False
         self.data = u''
 
     def open(self, mode="r"):
         if 'w' in mode:
             if 'size' in self.__dict__:
                 del self.__dict__['size']
-            if 'previewSize' in self.__dict__:
-                del self.__dict__['previewSize']
             self.modified = zope.datetime.parseDatetimetz(str(datetime.now()))
         return self._blob.open(mode)
 
     def openPreview(self, mode="r"):
-        if 'w' in mode and 'previewSize' in self.__dict__:
-            del self.__dict__['previewSize']
         try:
             return self._previewBlob.open(mode)
         except AttributeError:
@@ -235,9 +229,6 @@ class File(Persistent):
 
     def _showPreview(self, request, filename=None, contentDisposition="inline"):
         response = request.response
-        if self.size and not self.previewSize:
-            self.generatePreview()
-            transaction.commit()
 
         response.setHeader('Content-Type', 'application/x-shockwave-flash')
 
@@ -297,7 +288,7 @@ class File(Persistent):
             ff.close()
             fp.close()
 
-            self.rebuildPreview = False
+            self.previewSize = size
             return size
 
     def __deepcopy__(self, memo):
@@ -305,7 +296,6 @@ class File(Persistent):
         new.data = self.data
         new.filename = self.filename
         new.mimeType = self.mimeType
-        new.rebuildPreview = self.rebuildPreview
         new.generatePreview()
         return new
 
@@ -377,7 +367,7 @@ class FileData(object):
     """ widget data """
     interface.implements(IFileData)
 
-    def __init__(self, file=u'', filename=None, mimeType=None, rebuildPreview=None):
+    def __init__(self, file=u'', filename=None, mimeType=None):
         if file is None:
             file = u''
 
@@ -400,11 +390,6 @@ class FileData(object):
             mimeType = api.guessMimetype(file, self.filename)[0]
 
         self.mimeType = mimeType
-
-        if rebuildPreview is None:
-            rebuildPreview = True
-
-        self.rebuildPreview = rebuildPreview
 
     @property
     def data(self):

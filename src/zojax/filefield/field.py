@@ -33,6 +33,9 @@ from interfaces import IFileDataClear, IFileDataNoValue
 
 _marker = object()
 
+# NOTE: max value for generated preview = 50Mb
+MAX_VALUE = 50 * 1024 * 1024
+
 
 class FileField(schema.MinMaxLen, schema.Field):
     interface.implements(IBlobDataField, IFileField)
@@ -86,15 +89,18 @@ class FileField(schema.MinMaxLen, schema.Field):
                 data.data = value.data
                 data.mimeType = value.mimeType
                 data.filename = value.filename
-                data.rebuildPreview = True
                 _setattr(object, self.__name__, data)
             else:
                 data = removeSecurityProxy(data)
                 data.data = value.data
                 data.mimeType = value.mimeType
                 data.filename = value.filename
-                data.rebuildPreview = True
                 _setattr(object, self.__name__, data)
+
+            # NOTE: generate preview
+            if value.size > 0 and bool(value.filename) and value.size < MAX_VALUE:
+                data.generatePreview()
+
         elif IFileDataClear.providedBy(value):
             data = _getattr(object, self.__name__, None)
             if IFile.providedBy(data):
