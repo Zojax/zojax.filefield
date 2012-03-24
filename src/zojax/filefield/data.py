@@ -30,7 +30,7 @@ from rwproperty import setproperty, getproperty
 
 import zope.datetime
 from zope import interface, component
-from zope.component import getMultiAdapter
+from zope.component import getMultiAdapter, getUtility
 from zope.cachedescriptors.property import Lazy
 from zope.publisher.interfaces.http import IResult
 from zope.publisher.interfaces import IPublishTraverse
@@ -39,7 +39,7 @@ from zojax.converter import api
 from zojax.resourcepackage import library
 from zojax.converter.interfaces import ConverterException
 
-from interfaces import IFile, IImage, IFileData
+from interfaces import IFile, IImage, IFileData, IPreviewsCatalog
 from interfaces import IFileDataClear, IFileDataNoValue, OO_CONVERTER_EXECUTABLE, \
 OO_CONVERTED_TYPES, PREVIEWED_TYPES
 
@@ -86,6 +86,11 @@ class File(Persistent):
     @getproperty
     def previewIsAvailable(self):
         if self.previewSize:
+
+            # NOTE: check record in previewsCatalog
+            previewsCatalog = getUtility(IPreviewsCatalog)
+            previewsCatalog.check(self)
+
             return True
 
         return False
@@ -145,6 +150,10 @@ class File(Persistent):
         self.filename = u''
         self.mimeType = u''
         self.data = u''
+
+        # NOTE: remove record from previewsCatalog
+        previewsCatalog = getUtility(IPreviewsCatalog)
+        previewsCatalog.remove(self)
 
     def open(self, mode="r"):
         if 'w' in mode:
@@ -289,6 +298,11 @@ class File(Persistent):
             fp.close()
 
             self.previewSize = size
+
+            # NOTE: add record to previewsCatalog
+            previewsCatalog = getUtility(IPreviewsCatalog)
+            previewsCatalog.add(self)
+
             return size
 
     def __deepcopy__(self, memo):

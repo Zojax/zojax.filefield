@@ -53,4 +53,5 @@ def test_suite():
             optionflags=doctest.NORMALIZE_WHITESPACE|doctest.ELLIPSIS),
         fromDocFile('widget.txt'),
         fromDocFile('download.txt'),
+        #fromDocFile('configlet.txt'),
         ))

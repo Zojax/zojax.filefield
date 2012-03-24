@@ -1,0 +1,53 @@
+=====
+Configlet
+=====
+
+    >>> from zope import interface, component
+    >>> from zope.interface.verify import verifyObject
+    >>> from zope.testbrowser.testing import Browser
+    >>> from zope.app.component.hooks import setSite
+    >>> from zope.app.folder.folder import Folder
+    >>> from zope.app.security.interfaces import IAuthentication
+    >>> from zope.security.management import newInteraction, endInteraction
+
+    >>> from zojax.filefield.interfaces import IPreviewsCatalog
+    >>> from zojax.filefield.interfaces import IPreviewDataEvent
+
+    >>> root = getRootFolder()
+    >>> setSite(root)
+    >>> sm = root.getSiteManager()
+
+    >>> folder = Folder()
+    >>> root['folder'] = folder
+    >>> folder1 = Folder()
+    >>> root['folder']['folder1'] = folder1
+    >>> folder2 = Folder()
+    >>> root['folder']['folder2'] = folder2
+
+    >>> configlet = sm.getUtility(IPreviewsCatalog)
+    >>> verifyObject(IPreviewsCatalog, configlet)
+    True
+
+    >>> class Participation:
+    ...     interaction = None
+    ...     def __init__(self, principal):
+    ...         self.principal = principal
+
+    >>> auth = sm.getUtility(IAuthentication)
+
+    >>> endInteraction()
+    >>> newInteraction(Participation(auth.getPrincipal('zope.mgr')))
+
+
+
+add record
+----------
+
+update record
+-------------
+
+check record
+------------
+
+remove record
+-------------

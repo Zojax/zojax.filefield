@@ -132,13 +132,13 @@ class IFile(interface.Interface):
 
     def show(request, filename=None):
         """ show file committed"""
-    
+
     def showFly(request, filename=None):
         """ show file """
 
     def showPreview(request, filename=None):
         """ show preview of the file committed"""
-    
+
     def showPreviewFly(request, filename=None):
         """ show preview of the file """
 
@@ -190,3 +190,31 @@ class IFileDataNoValue(interface.Interface):
 
 class IFileWidget(IFileWidgetBase):
     """ file field widget """
+
+
+class IPreviewsCatalog(interface.Interface):
+    """ Previews configlet """
+
+    records = interface.Attribute('Records')
+
+    def add(object):
+        """ add record """
+
+    def remove(object):
+        """ remove record """
+
+    def check(object):
+        """ check record """
+
+    def getObject(id):
+        """ return record by id """
+
+
+class IPreviewData(interface.Interface):
+    """ Preview record for configlet """
+
+    id = interface.Attribute('Id')
+
+    parent = schema.Object(
+        title = _(u'Parent'),
+        schema = IFileData)
