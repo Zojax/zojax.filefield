@@ -21,6 +21,8 @@ from zope.i18nmessageid import MessageFactory
 
 from z3c.form.interfaces import IFileWidget as IFileWidgetBase
 
+from zojax.widget.radio.field import RadioChoice
+import vocabulary
 
 _ = MessageFactory('zojax.filefield')
 
@@ -98,17 +100,11 @@ class IFile(interface.Interface):
         title = _(u'Data'),
         required = False)
 
-    previewData = schema.Bytes(
-        title = _(u'Preview Data'),
-        required = False)
-
     previewIsAvailable = schema.Bool(
         title = _(u'Preview is Available'),
         required = False)
 
     size = interface.Attribute('File size')
-
-    previewSize = interface.Attribute('File preview size')
 
     hash = interface.Attribute('Data md5 hash')
 
@@ -195,6 +191,13 @@ class IFileWidget(IFileWidgetBase):
 class IPreviewsCatalog(interface.Interface):
     """ Previews configlet """
 
+    generateMethod = RadioChoice(
+        title = u'Preview Generation',
+        description = u'Select preview generation method.',
+        vocabulary = vocabulary.creationTypes,
+        default = u'upload',
+        required = True)
+
     records = interface.Attribute('Records')
 
     def add(object):
@@ -206,15 +209,25 @@ class IPreviewsCatalog(interface.Interface):
     def check(object):
         """ check record """
 
+    def getPreview(object):
+        """ returns preview """
+
+    def getPreviewSize(object):
+        """ returns preview size """
+
     def getObject(id):
-        """ return record by id """
+        """ returns record by id """
 
 
-class IPreviewData(interface.Interface):
+class IPreviewRecord(interface.Interface):
     """ Preview record for configlet """
-
-    id = interface.Attribute('Id')
 
     parent = schema.Object(
         title = _(u'Parent'),
         schema = IFileData)
+
+    previewData = schema.Bytes(
+        title = _(u'Preview Data'),
+        required = False)
+
+    previewSize = interface.Attribute('File preview size')

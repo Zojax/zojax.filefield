@@ -9,9 +9,9 @@
   <table class="z-table" tal:condition="view/batch">
     <thead>
       <tr>
-	    <th i18n:translate="">Id</th>
 	    <th i18n:translate="">File Name</th>
 	    <th i18n:translate="">Type</th>
+	    <th i18n:translate="">Modified</th>
       </tr>
     </thead>
     <tal:block tal:repeat="record view/batch">
@@ -19,9 +19,9 @@
       <tr tal:define="info python:view.getInfo(record)"
           tal:condition="info/mimeType"
           tal:attributes="class python:repeat['record'].odd() and 'even' or 'odd'">
-	    <td tal:content="info/id"></td>
 	    <td tal:content="info/filename"></td>
 	    <td tal:content="info/mimeType"></td>
+	    <td tal:content="info/modified"></td>
       </tr>
     </tal:block>
   </table>

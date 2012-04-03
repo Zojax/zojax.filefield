@@ -18,9 +18,11 @@ $Id$
 from persistent.interfaces import IPersistent
 
 from zope import interface, schema
+from zope.event import notify
 from zope.schema.interfaces import RequiredMissing, WrongType
 from zope.security.proxy import removeSecurityProxy
 from zope.publisher.browser import FileUpload
+from zope.lifecycleevent import ObjectModifiedEvent
 
 from data import File, Image, FileData, getImageSize, fileDataNoValue
 
@@ -32,9 +34,6 @@ from interfaces import IFile, IImage, IFileData
 from interfaces import IFileDataClear, IFileDataNoValue
 
 _marker = object()
-
-# NOTE: max value for generated preview = 50Mb
-MAX_VALUE = 50 * 1024 * 1024
 
 
 class FileField(schema.MinMaxLen, schema.Field):
@@ -96,10 +95,7 @@ class FileField(schema.MinMaxLen, schema.Field):
                 data.mimeType = value.mimeType
                 data.filename = value.filename
                 _setattr(object, self.__name__, data)
-
-            # NOTE: generate preview
-            if value.size > 0 and bool(value.filename) and value.size < MAX_VALUE:
-                data.generatePreview()
+                notify(ObjectModifiedEvent(data))
 
         elif IFileDataClear.providedBy(value):
             data = _getattr(object, self.__name__, None)

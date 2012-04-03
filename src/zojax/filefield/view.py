@@ -22,8 +22,14 @@ from zojax.statusmessage.interfaces import IStatusMessage
 
 from interfaces import _, IPreviewsCatalog
 
+from zojax.layoutform.field import Fields
+from zojax.wizard.step import WizardStepForm
 
-class PreviewsCatalogView(object):
+class PreviewsCatalogView(WizardStepForm):
+
+    title = _(u'Previews Catalog')
+    label = _(u'You can rebuild Previews')
+    fields = Fields(IPreviewsCatalog)
 
     def update(self):
         request = self.request
@@ -42,15 +48,13 @@ class PreviewsCatalogView(object):
                 _('Previews catalog has been rebuilded.'))
 
         results = context.records.values()
-        # TODO: check if there are no records in previewsCatalog
 
         self.batch = Batch(results, size=20, context=context, request=request)
 
     def getInfo(self, record):
-        #record.parent: mimeType, filename, modified, hash,
-        #               previewSize, _previewBlob, size, _blob
-        info = {'id': record.id,
-                'filename': record.parent.filename,
-                'mimeType': record.parent.mimeType}
+        # NOTE: record.parent: mimeType, filename, modified, hash, size, _blob
+        info = {'filename': record.parent.filename,
+                'mimeType': record.parent.mimeType,
+                'modified': record.parent.modified}
 
         return info

@@ -30,14 +30,17 @@ from rwproperty import setproperty, getproperty
 
 import zope.datetime
 from zope import interface, component
+from zope.proxy import removeAllProxies
 from zope.component import getMultiAdapter, getUtility
 from zope.cachedescriptors.property import Lazy
 from zope.publisher.interfaces.http import IResult
 from zope.publisher.interfaces import IPublishTraverse
+from zope.lifecycleevent.interfaces import IObjectModifiedEvent
 
 from zojax.converter import api
 from zojax.resourcepackage import library
 from zojax.converter.interfaces import ConverterException
+from zojax.content.type.interfaces import IDraftedContent
 
 from interfaces import IFile, IImage, IFileData, IPreviewsCatalog
 from interfaces import IFileDataClear, IFileDataNoValue, OO_CONVERTER_EXECUTABLE, \
@@ -46,6 +49,8 @@ OO_CONVERTED_TYPES, PREVIEWED_TYPES
 
 logger = logging.getLogger('zojax.filefield')
 
+# NOTE: max value for generated preview = 50Mb
+MAX_VALUE = 50 * 1024 * 1024
 
 class File(Persistent):
     """ inspired by zope.file package implementation """
@@ -57,7 +62,6 @@ class File(Persistent):
 
     def __init__(self):
         self._blob = Blob()
-        self._previewBlob = Blob()
         self.data = u''
 
     @setproperty
@@ -77,23 +81,11 @@ class File(Persistent):
         return data
 
     @getproperty
-    def previewData(self):
-        fp = self._previewBlob.open('r')
-        data = fp.read()
-        fp.close()
-        return data
-
-    @getproperty
     def previewIsAvailable(self):
-        if self.previewSize:
-
-            # NOTE: check record in previewsCatalog
-            previewsCatalog = getUtility(IPreviewsCatalog)
-            previewsCatalog.check(self)
-
-            return True
-
-        return False
+        """ check record in previewsCatalog,
+            returns True or False
+        """
+        return getUtility(IPreviewsCatalog).check(self)
 
     @getproperty
     def size(self):
@@ -112,24 +104,6 @@ class File(Persistent):
     @setproperty
     def size(self, value):
         self.__dict__['size'] = value
-
-    @getproperty
-    def previewSize(self):
-        if 'previewSize' in self.__dict__:
-            return self.__dict__['previewSize']
-        else:
-            reader = self.openPreview()
-            try:
-                reader.seek(0,2)
-                size = int(reader.tell())
-            finally:
-                reader.close()
-            self.__dict__['previewSize'] = size
-            return size
-
-    @setproperty
-    def previewSize(self, value):
-        self.__dict__['previewSize'] = value
 
     @Lazy
     def hash(self):
@@ -152,8 +126,7 @@ class File(Persistent):
         self.data = u''
 
         # NOTE: remove record from previewsCatalog
-        previewsCatalog = getUtility(IPreviewsCatalog)
-        previewsCatalog.remove(self)
+        getUtility(IPreviewsCatalog).remove(self)
 
     def open(self, mode="r"):
         if 'w' in mode:
@@ -162,12 +135,12 @@ class File(Persistent):
             self.modified = zope.datetime.parseDatetimetz(str(datetime.now()))
         return self._blob.open(mode)
 
+
     def openPreview(self, mode="r"):
-        try:
-            return self._previewBlob.open(mode)
-        except AttributeError:
-            self._previewBlob = Blob()
-            return self._previewBlob.open(mode)
+        """ returns openPreview for preview
+        """
+        preview = getUtility(IPreviewsCatalog).getPreview(self)
+        return preview.openPreview(mode)
 
     def openDetached(self, n=0):
         try:
@@ -177,13 +150,11 @@ class File(Persistent):
                 transaction.commit()
                 return self.openDetached(n+1)
 
-    def openPreviewDetached(self, n=0):
-        try:
-            return file(self._previewBlob.committed(), 'rb')
-        except BlobError:
-            if n < 2:
-                transaction.commit()
-                return self.openPreviewDetached(n+1)
+    def openPreviewDetached(self):
+        """ returns openPreviewDetached for preview
+        """
+        preview = getUtility(IPreviewsCatalog).getPreview(self)
+        return preview.openPreviewDetached()
 
     def _show(self, request, filename=None, contentDisposition="inline"):
         response = request.response
@@ -237,11 +208,15 @@ class File(Persistent):
         return res
 
     def _showPreview(self, request, filename=None, contentDisposition="inline"):
+
+        # NOTE: previewSize for preview from previewsCatalog
+        previewSize = getUtility(IPreviewsCatalog).getPreviewSize(self)
+
         response = request.response
 
         response.setHeader('Content-Type', 'application/x-shockwave-flash')
 
-        response.setHeader('Content-Length', self.previewSize)
+        response.setHeader('Content-Length', previewSize)
 
         modified = self.modified
 
@@ -266,7 +241,7 @@ class File(Persistent):
             'Content-Disposition','%s; filename="%s"'%(
                 contentDisposition, filename.encode('utf-8')))
 
-        if not self.previewSize:
+        if not previewSize:
             response.setHeader('Content-Type', 'text/plain')
             return ''
         else:
@@ -285,25 +260,9 @@ class File(Persistent):
         return res
 
     def generatePreview(self):
-        fp = self.openPreview('w')
-        ff = self.open()
-        size = 0
-        try:
-            fp.write(api.convert(ff, 'application/x-shockwave-flash', self.mimeType, filename=self.filename))
-            size = int(fp.tell())
-        except ConverterException, e:
-            logger.warning('Error generating preview: %s', e)
-        finally:
-            ff.close()
-            fp.close()
-
-            self.previewSize = size
-
-            # NOTE: add record to previewsCatalog
-            previewsCatalog = getUtility(IPreviewsCatalog)
-            previewsCatalog.add(self)
-
-            return size
+        """ add record to previewsCatalog, generate preview
+        """
+        getUtility(IPreviewsCatalog).add(self)
 
     def __deepcopy__(self, memo):
         new = File()
@@ -558,3 +517,13 @@ def getImageSize(fp):
     except TypeError:
         pass
     return width, height
+
+
+@component.adapter(IFile, IObjectModifiedEvent)
+def fileModifiedHandler(object, event):
+    """ generate preview for File
+    """
+    if not IDraftedContent.providedBy(object):
+        if object.size > 0 and object.size < MAX_VALUE:
+            object = removeAllProxies(object)
+            object.generatePreview()

@@ -110,21 +110,32 @@
   <!-- configlet -->
   <zojax:configlet
      name="system.previewscatalog"
-     schema=".interfaces.IPreviewsCatalog"
      title="Previews Catalog"
-     description="Rebuild all Previews."
      class=".configlet.PreviewsCatalog"
-     permission="zojax.Configure">
-    <require
-       permission="zope.View" attributes="add" />
-  </zojax:configlet>
+     schema=".interfaces.IPreviewsCatalog"
+     permission="zojax.Configure" />
 
-  <!-- configlet view -->
+  <!-- configlet configure -->
   <zojax:pagelet
      name="index.html"
      for=".interfaces.IPreviewsCatalog"
+     class="zojax.controlpanel.browser.wizard.ConfigletEditWizard"
+     permission="zojax.Configure" />
+
+  <!-- configlet rebuild -->
+  <zojax:pagelet
+     name="rebuild"
+     type="wizard.step"
+     title="Created Previews"
+     label="Rebuild previews"
+     for=".interfaces.IPreviewsCatalog
+      zojax.controlpanel.browser.interfaces.IConfigletEditWizard"
      template="view.pt"
      class=".view.PreviewsCatalogView"
-     permission="zojax.Configure" />
+     permission="zojax.Configure"
+     weight="200" />
+
+  <!-- File modified  -->
+  <subscriber handler=".data.fileModifiedHandler" />
 
 </configure>
