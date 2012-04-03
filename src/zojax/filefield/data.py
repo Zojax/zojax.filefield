@@ -522,7 +522,7 @@ def fileModifiedHandler(object, event):
     """ generate preview for File
     """
     if not IDraftedContent.providedBy(object):
-        MAX_VALUE = getUtility(IPreviewsCatalog).maxValue
+        MAX_VALUE = getUtility(IPreviewsCatalog).maxValue * 1024 * 1024
         if object.size > 0 and object.size < MAX_VALUE:
             object = removeAllProxies(object)
             object.generatePreview()
