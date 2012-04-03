@@ -24,6 +24,7 @@ from persistent.interfaces import IPersistent
 from rwproperty import setproperty, getproperty
 
 from zope import interface, event
+from zope.keyreference.interfaces import NotYet
 from zope.keyreference.persistent import KeyReferenceToPersistent
 
 from zojax.converter import api
