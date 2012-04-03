@@ -42,7 +42,7 @@ class PreviewsCatalog(object):
     def records(self):
         data = self.data.get('records')
         if data is None:
-            data = self.family.IO.BTree()
+            data = self.family.OO.BTree()
             self.data['records'] = data
         return data
 
