@@ -192,10 +192,16 @@ class IPreviewsCatalog(interface.Interface):
     """ Previews configlet """
 
     generateMethod = RadioChoice(
-        title = u'Preview Generation',
-        description = u'Select preview generation method.',
+        title = _(u'Preview Generation'),
+        description = _(u'Select preview generation method.'),
         vocabulary = vocabulary.creationTypes,
         default = u'upload',
+        required = True)
+
+    maxValue = schema.Int(
+        title = _(u'Max file Size'),
+        description = _(u'Set max file size in MB for which preview should be generated.'),
+        default = 50,
         required = True)
 
     records = interface.Attribute('Records')
