@@ -327,7 +327,7 @@ result:
   ... """, handle_errors=False)
   HTTP/1.1 200 Ok
   Content-Disposition: inline; filename="abcdefg.xlsx"
-  Content-Length: 20688
+  Content-Length: 20817
   Content-Type: application/x-shockwave-flash
   Last-Modified: ...
   X-Generated-Time: ...
