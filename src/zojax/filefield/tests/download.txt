@@ -3,16 +3,22 @@ Download File
 =============
 
   >>> import transaction
-  >>> from zojax.filefield.data import File
-  >>> from zope.publisher.browser import TestRequest
+  >>> from zope import event
   >>> from zope.testbrowser.testing import Browser
+  >>> from zope.app.component.hooks import setSite
+  >>> from zope.publisher.browser import TestRequest
+  >>> from zope.lifecycleevent import ObjectModifiedEvent
+  >>> from zojax.filefield.data import File
 
   >>> browser = Browser()
   >>> browser.addHeader("Authorization", "Basic mgr:mgrpw")
   >>> browser.handleErrors = False
 
+  >>> root = getRootFolder()
+  >>> setSite(root)
+
   >>> f = File()
-  >>> getRootFolder()['file'] = f
+  >>> root['file'] = f
   >>> transaction.commit()
 
 Headers
@@ -116,7 +122,7 @@ to add a file object where we can get to it using a browser:
   >>> w.close()
   >>> transaction.commit()
 
-  >>> getRootFolder()["abcdefg"] = f
+  >>> root["abcdefg"] = f
 
   >>> transaction.commit()
 
@@ -145,6 +151,7 @@ The Preview View
 -----------------
 
 PDF
+/home/suvdim/workspace/zojax/quick.intranet/zojax/zojax.filefield/src/zojax/filefield/tests/test.pdf
 
   >>> from zojax.filefield import tests
   >>> import os.path
@@ -156,9 +163,11 @@ PDF
   >>> w.close()
   >>> transaction.commit()
 
-  >>> getRootFolder()["previewed-pdf"] = f
-
+  >>> root["previewed-pdf"] = f
   >>> transaction.commit()
+
+generate Preview
+  >>> event.notify(ObjectModifiedEvent(root["previewed-pdf"]))
 
 Now, let's request the download view of the file object and check the
 result:
@@ -169,7 +178,7 @@ result:
   ... """, handle_errors=False)
   HTTP/1.1 200 Ok
   Content-Disposition: inline; filename="abcdefg"
-  Content-Length: 709
+  Content-Length: 675
   Content-Type: application/x-shockwave-flash
   Last-Modified: ...
   X-Generated-Time: ...
@@ -188,9 +197,11 @@ ODT
   >>> w.close()
   >>> transaction.commit()
 
-  >>> getRootFolder()["previewed-odt"] = f
-
+  >>> root["previewed-odt"] = f
   >>> transaction.commit()
+
+generate Preview
+  >>> event.notify(ObjectModifiedEvent(root["previewed-odt"]))
 
 Now, let's request the download view of the file object and check the
 result:
@@ -235,9 +246,11 @@ RTF
   >>> w.close()
   >>> transaction.commit()
 
-  >>> getRootFolder()["previewed-rtf"] = f
-
+  >>> root["previewed-rtf"] = f
   >>> transaction.commit()
+
+generate Preview
+  >>> event.notify(ObjectModifiedEvent(root["previewed-rtf"]))
 
 Now, let's request the download view of the file object and check the
 result:
@@ -266,9 +279,11 @@ XLS
   >>> w.close()
   >>> transaction.commit()
 
-  >>> getRootFolder()["previewed-xls"] = f
-
+  >>> root["previewed-xls"] = f
   >>> transaction.commit()
+
+generate Preview
+  >>> event.notify(ObjectModifiedEvent(root["previewed-xls"]))
 
 Now, let's request the download view of the file object and check the
 result:
@@ -297,9 +312,11 @@ XLSX
   >>> w.close()
   >>> transaction.commit()
 
-  >>> getRootFolder()["previewed-xlsx"] = f
-
+  >>> root["previewed-xlsx"] = f
   >>> transaction.commit()
+
+generate Preview
+  >>> event.notify(ObjectModifiedEvent(root["previewed-xlsx"]))
 
 Now, let's request the download view of the file object and check the
 result:
@@ -328,9 +345,11 @@ ODS
   >>> w.close()
   >>> transaction.commit()
 
-  >>> getRootFolder()["previewed-ods"] = f
-
+  >>> root["previewed-ods"] = f
   >>> transaction.commit()
+
+generate Preview
+  >>> event.notify(ObjectModifiedEvent(root["previewed-ods"]))
 
 Now, let's request the download view of the file object and check the
 result:
@@ -360,9 +379,11 @@ TXT
   >>> w.close()
   >>> transaction.commit()
 
-  >>> getRootFolder()["previewed-txt"] = f
-
+  >>> root["previewed-txt"] = f
   >>> transaction.commit()
+
+generate Preview
+  >>> event.notify(ObjectModifiedEvent(root["previewed-txt"]))
 
 Now, let's request the download view of the file object and check the
 result:
@@ -391,9 +412,11 @@ GIF
   >>> w.close()
   >>> transaction.commit()
 
-  >>> getRootFolder()["previewed-gif"] = f
-
+  >>> root["previewed-gif"] = f
   >>> transaction.commit()
+
+generate Preview
+  >>> event.notify(ObjectModifiedEvent(root["previewed-gif"]))
 
 Now, let's request the download view of the file object and check the
 result:
