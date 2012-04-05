@@ -258,13 +258,13 @@ result:
   ... GET /previewed-rtf/@@preview HTTP/1.1
   ... Authorization: Basic mgr:mgrpw
   ... """, handle_errors=False)
-  HTTP/1.1 200 Ok
-  Content-Disposition: inline; filename="abcdefg.rtf"
-  Content-Length: 831
-  Content-Type: application/x-shockwave-flash
-  Last-Modified: ...
-  <BLANKLINE>
-  CWS ...
+    HTTP/1.1 200 Ok
+    Content-Disposition: inline; filename="abcdefg.rtf"
+    Content-Length: 831
+    Content-Type: application/x-shockwave-flash
+    Last-Modified: ...
+    X-Generated-Time: ...
+    ...
 
 XLS
 
@@ -296,6 +296,7 @@ result:
   Content-Length: 20779
   Content-Type: application/x-shockwave-flash
   Last-Modified: ...
+  X-Generated-Time: ...
   <BLANKLINE>
   CWS ...
 
