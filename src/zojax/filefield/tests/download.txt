@@ -151,7 +151,6 @@ The Preview View
 -----------------
 
 PDF
-/home/suvdim/workspace/zojax/quick.intranet/zojax/zojax.filefield/src/zojax/filefield/tests/test.pdf
 
   >>> from zojax.filefield import tests
   >>> import os.path
