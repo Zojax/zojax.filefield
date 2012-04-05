@@ -211,7 +211,7 @@ result:
   ... """, handle_errors=False)
   HTTP/1.1 200 Ok
   Content-Disposition: inline; filename="abcdefg.odt"
-  Content-Length: 746
+  Content-Length: 884
   Content-Type: application/x-shockwave-flash
   Last-Modified: ...
   <BLANKLINE>
@@ -260,7 +260,7 @@ result:
   ... """, handle_errors=False)
   HTTP/1.1 200 Ok
   Content-Disposition: inline; filename="abcdefg.rtf"
-  Content-Length: 769
+  Content-Length: 831
   Content-Type: application/x-shockwave-flash
   Last-Modified: ...
   <BLANKLINE>
@@ -293,7 +293,7 @@ result:
   ... """, handle_errors=False)
   HTTP/1.1 200 Ok
   Content-Disposition: inline; filename="abcdefg.xls"
-  Content-Length: 20718
+  Content-Length: 20779
   Content-Type: application/x-shockwave-flash
   Last-Modified: ...
   <BLANKLINE>
@@ -359,7 +359,7 @@ result:
   ... """, handle_errors=False)
   HTTP/1.1 200 Ok
   Content-Disposition: inline; filename="abcdefg.ods"
-  Content-Length: 16892
+  Content-Length: 17238
   Content-Type: application/x-shockwave-flash
   Last-Modified: ...
   <BLANKLINE>
