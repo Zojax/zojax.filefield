@@ -24,6 +24,7 @@ from persistent.interfaces import IPersistent
 from rwproperty import setproperty, getproperty
 
 from zope import interface, event
+from zope.component import getUtility
 from zope.keyreference.interfaces import NotYet
 from zope.keyreference.persistent import KeyReferenceToPersistent
 
@@ -189,20 +190,23 @@ class PreviewRecord(Persistent):
                 return self.openPreviewDetached(n+1)
 
     def generatePreview(self):
-        fp = self.openPreview('w')
-        ff = self.parent.open()
+        MAX_VALUE = getUtility(IPreviewsCatalog).maxValue * 1024 * 1024
         size = 0
-        try:
-            fp.write(api.convert(ff, 'application/x-shockwave-flash', self.parent.mimeType, filename=self.parent.filename))
-            size = int(fp.tell())
-        except ConverterException, e:
-            logger.warning('Error generating preview: %s', e)
-        finally:
-            ff.close()
-            fp.close()
 
-            self.previewSize = size
-            return size
+        if self.parent.size < MAX_VALUE:
+            fp = self.openPreview('w')
+            ff = self.parent.open()
+            try:
+                fp.write(api.convert(ff, 'application/x-shockwave-flash', self.parent.mimeType, filename=self.parent.filename))
+                size = int(fp.tell())
+            except ConverterException, e:
+                logger.warning('Error generating preview: %s', e)
+            finally:
+                ff.close()
+                fp.close()
+
+        self.previewSize = size
+        return size
 
 
 #@component.adapter(IPreviewDataAware, IIntIdRemovedEvent)
