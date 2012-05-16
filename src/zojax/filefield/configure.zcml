@@ -1,6 +1,5 @@
 <configure
    xmlns="http://namespaces.zope.org/zope"
-   xmlns:browser="http://namespaces.zope.org/browser"
    xmlns:zojax="http://namespaces.zope.org/zojax"
    xmlns:z3c="http://namespaces.zope.org/z3c"
    xmlns:i18n="http://namespaces.zope.org/i18n"
@@ -50,90 +49,8 @@
 
   <adapter factory=".copy.imageCopyFactory" />
 
-  <!-- browser view -->
-  <browser:defaultView
-     name="index.html"
-     for=".interfaces.IFile" />
-
-  <browser:page
-     name="index.html"
-     for=".interfaces.IFile"
-     class=".data.FileView"
-     permission="zope.Public" />
-
-  <browser:page
-     name="preview"
-     for=".interfaces.IFile"
-     class=".data.FilePreView"
-     permission="zope.Public" />
-
-  <zojax:pagelet
-     name="preview.html"
-     for=".interfaces.IFile"
-     template="preview-page.pt"
-     permission="zope.Public" />
-
-
-  <!-- resources -->
-  <zojax:resourcedirectory
-     name="filefield"
-     directory="resources" />
-
-  <zojax:pagelet
-     type="pagelet"
-     name="preview"
-     template="preview.pt"
-     for=".interfaces.IFile"
-     class=".data.FilePreViewPage"
-     permission="zope.Public" />
-
-  <z3c:widgetTemplate
-      template="widget_input.pt"
-      mode="input"
-      widget=".interfaces.IFileWidget"
-      layer="z3c.form.interfaces.IFormLayer"
-      />
-
-  <z3c:widgetTemplate
-      template="widget_input.pt"
-      mode="display"
-      widget=".interfaces.IFileWidget"
-      layer="z3c.form.interfaces.IFormLayer"
-      />
-
-  <adapter factory=".data.FileTraverser" />
-
-  <class class=".data.FileTraverser">
-    <allow interface="zope.publisher.interfaces.IPublishTraverse" />
-  </class>
-
-  <!-- configlet -->
-  <zojax:configlet
-     name="system.previewscatalog"
-     title="Previews Catalog"
-     class=".configlet.PreviewsCatalog"
-     schema=".interfaces.IPreviewsCatalog"
-     permission="zojax.Configure" />
-
-  <!-- configlet configure -->
-  <zojax:pagelet
-     name="index.html"
-     for=".interfaces.IPreviewsCatalog"
-     class="zojax.controlpanel.browser.wizard.ConfigletEditWizard"
-     permission="zojax.Configure" />
-
-  <!-- configlet rebuild -->
-  <zojax:pagelet
-     name="rebuild"
-     type="wizard.step"
-     title="Created Previews"
-     label="Rebuild previews"
-     for=".interfaces.IPreviewsCatalog
-      zojax.controlpanel.browser.interfaces.IConfigletEditWizard"
-     template="view.pt"
-     class=".view.PreviewsCatalogView"
-     permission="zojax.Configure"
-     weight="200" />
+  <!-- browser views -->
+  <include package=".browser" />
 
   <!-- File modified  -->
   <subscriber handler=".data.fileModifiedHandler" />

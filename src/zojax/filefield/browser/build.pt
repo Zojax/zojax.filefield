@@ -1,0 +1,15 @@
+<div class="z-topframe">
+  <h1 class="z-content-title"
+      tal:content="context/__title__"></h1>
+  <div class="z-page-description"
+       tal:content="context/__description__"></div>
+
+  <form action="build_all" method="post">
+    <p>bla-bla</p>
+    <div class="z-form-controls">
+      <hr />
+      <input type="submit" class="z-form-standalonebtn" i18n:attributes="value"
+             name="form.button.build" value="Build Previews" />
+    </div>
+  </form>
+</div>

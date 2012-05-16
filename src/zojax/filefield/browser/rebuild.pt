@@ -1,0 +1,47 @@
+<div class="z-topframe" tal:define="batch view/batch">
+  <h1 class="z-content-title"
+      tal:content="context/__title__"></h1>
+  <div class="z-page-description"
+       tal:content="context/__description__"></div>
+
+  <tal:block content="structure view/batch/@@pagelet/batch.view" />
+  <form action="rebuild" method="post" tal:condition="batch">
+    <table class="z-table">
+      <thead>
+        <tr>
+        <th></th>
+          <th i18n:translate="">File Name</th>
+          <th i18n:translate="">Type</th>
+          <th i18n:translate="">Modified</th>
+        </tr>
+      </thead>
+
+      <tal:block tal:repeat="record batch">
+        <!-- condition for empty object -->
+        <tr tal:define="info python:view.getInfo(record)"
+            tal:condition="info/mimeType"
+            tal:attributes="class python:repeat['record'].odd() and 'even' or 'odd'">
+          <td>
+            <input type="checkbox" name="form.checkbox.record_id:list"
+                   tal:attributes="value info/recordId"/>
+          </td>
+          <td tal:content="info/filename"></td>
+          <td tal:content="info/mimeType"></td>
+          <td tal:content="info/modified"></td>
+        </tr>
+      </tal:block>
+    </table>
+
+    <div class="z-form-controls">
+      <hr />
+      <input type="submit" class="z-form-standalonebtn" i18n:attributes="value"
+             name="form.button.rebuild_selected" value="Rebuild Selected Previews" />
+      <input type="submit" class="z-form-standalonebtn" i18n:attributes="value"
+             name="form.button.rebuild" value="Rebuild Previews" />
+    </div>
+  </form>
+
+  <div tal:condition="not:batch">
+    There is no any previews in catalog.
+  </div>
+</div>

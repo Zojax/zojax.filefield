@@ -20,7 +20,7 @@ from zope.proxy import removeAllProxies
 from zojax.batching.batch import Batch
 from zojax.statusmessage.interfaces import IStatusMessage
 
-from interfaces import _, IPreviewsCatalog
+from ..interfaces import _, IPreviewsCatalog
 
 from zojax.layoutform.field import Fields
 from zojax.wizard.step import WizardStepForm
@@ -47,14 +47,35 @@ class PreviewsCatalogView(WizardStepForm):
             IStatusMessage(request).add(
                 _('Previews catalog has been rebuilded.'))
 
-        results = context.records.values()
+        elif 'form.button.rebuild_selected' in request:
+            for rid in request.get('form.checkbox.record_id', ()):
+                try:
+                    context.records[rid].parent.generatePreview()
+                except KeyError:
+                    pass
+            IStatusMessage(request).add(
+                _('Selected reviews has been rebuilded.'))
+
+        results = context.records.items()
 
         self.batch = Batch(results, size=20, context=context, request=request)
 
-    def getInfo(self, record):
+    def getInfo(self, item):
+        id, record = item
         # NOTE: record.parent: mimeType, filename, modified, hash, size, _blob
-        info = {'filename': record.parent.filename,
-                'mimeType': record.parent.mimeType,
-                'modified': record.parent.modified}
+        return dict(filename=record.parent.filename,
+                    mimeType=record.parent.mimeType,
+                    modified=record.parent.modified,
+                    recordId=id)
 
-        return info
+class PreviewsCatalogBuildView(WizardStepForm):
+
+    title = _(u'Create Previews for All Files')
+    label = _(u'Build previews')
+    fields = {}
+
+    def update(self):
+        request = self.request
+        
+        if 'form.button.build' in request:
+            print 'build'
