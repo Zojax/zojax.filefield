@@ -17,6 +17,7 @@ $Id$
 """
 from zope.proxy import removeAllProxies
 from zope.component import getUtility
+from zope.app.intid.interfaces import IIntIds
 
 from zojax.batching.batch import Batch
 
@@ -40,9 +41,9 @@ class PreviewsCatalogView(WizardStep):
         context = removeAllProxies(self.context)
 
         if 'form.button.rebuild' in request:
-            for rid, record in context.records.items():
+            for oid, record in context.records.items():
                 if not record.parent.mimeType:
-                    context.remove(rid)
+                    context.remove(oid)
                     continue
 
                 # NOTE: generate new Preview
@@ -52,13 +53,19 @@ class PreviewsCatalogView(WizardStep):
                 _('Previews catalog has been rebuilded.'))
 
         elif 'form.button.rebuild_selected' in request:
-            for rid in request.get('form.checkbox.record_id', ()):
+            for oid in request.get('form.checkbox.record_id', ()):
                 try:
-                    context.records[rid].parent.generatePreview()
+                    context.records[int(rid)].parent.generatePreview()
                 except KeyError:
                     pass
             IStatusMessage(request).add(
                 _('Selected reviews has been rebuilded.'))
+
+        elif 'form.button.remove_selected' in request:
+            for oid in request.get('form.checkbox.record_id', ()):
+                del context.records[int(oid)]
+            IStatusMessage(request).add(
+                _('Selected reviews has been removed.'))
 
         results = context.records.items()
 
@@ -84,6 +91,7 @@ class PreviewsCatalogBuildView(WizardStep):
         
         catalog = getUtility(ICatalog)
         preview_catalog = getUtility(IPreviewsCatalog)
+        int_ids = getUtility(IIntIds)
         
         files = catalog.searchResults(type={'any_of': ['contenttype.file']})
         
@@ -97,7 +105,20 @@ class PreviewsCatalogBuildView(WizardStep):
 
         elif 'form.button.build_selected' in request:
             for id in request.get('form.checkbox.id', ()):
-                print id
+                preview_catalog.add(int_ids.queryObject(int(id)).data)
 
-        results = [f for f in files if preview_catalog.add(f.data)]#no, my own check here - previews can re-build here, if mode for catalog switched in `check` mode
+            IStatusMessage(request).add(
+                _('Previews for selected files has been builded.'))
+
+        #previews can re-build here
+        #if mode for preview catalog's mode switched in `check`
+        #lets set allow_auto_generate=False flag
+        results = [f for f in files
+                   if not preview_catalog.check(f.data,
+                                                allow_auto_generate=False)]
         self.batch = Batch(results, size=20, context=context, request=request)
+
+    def getInfo(self, file):
+        int_ids = getUtility(IIntIds)
+        return dict(id=int_ids.getId(file),
+                    name=file.data.filename)

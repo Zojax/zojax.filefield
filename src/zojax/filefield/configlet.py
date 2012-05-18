@@ -81,7 +81,7 @@ class PreviewsCatalog(object):
             #event.notify(PreviewRecordRemovedEvent(object, record))
             del self.records[oid]
 
-    def check(self, object=None):
+    def check(self, object=None, allow_auto_generate=True):
         if object is None or not IFile.providedBy(object):
             return
 
@@ -92,7 +92,7 @@ class PreviewsCatalog(object):
         if oid in self.records and self.records[oid].previewSize > 0:
             return True
         else:
-            if 'check' in self.generateMethod:
+            if allow_auto_generate and 'check' in self.generateMethod:
                 self.add(object)
                 if self.records[oid].previewSize > 0:
                     return True

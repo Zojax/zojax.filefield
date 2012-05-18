@@ -9,16 +9,19 @@
       <thead>
         <tr>
           <th></th>
+          <th>File</th>
         </tr>
       </thead>
 
       <tal:block tal:repeat="record batch">
         <!-- condition for empty object -->
-        <tr tal:attributes="class python:repeat['record'].odd() and 'even' or 'odd'">
+        <tr tal:define="info python:view.getInfo(record)"
+            tal:attributes="class python:repeat['record'].odd() and 'even' or 'odd'">
           <td>
             <input type="checkbox" name="form.checkbox.id:list"
-                   tal:attributes="value record/id"/>
+                   tal:attributes="value info/id"/>
           </td>
+          <td tal:content="info/name"></td>
         </tr>
       </tal:block>
     </table>
