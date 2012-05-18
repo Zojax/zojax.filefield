@@ -16,22 +16,26 @@
 $Id$
 """
 from zope.proxy import removeAllProxies
+from zope.component import getUtility
 
 from zojax.batching.batch import Batch
+
 from zojax.statusmessage.interfaces import IStatusMessage
 
 from ..interfaces import _, IPreviewsCatalog
 
-from zojax.layoutform.field import Fields
-from zojax.wizard.step import WizardStepForm
+from zojax.wizard.step import WizardStep
 
-class PreviewsCatalogView(WizardStepForm):
+from zojax.catalog.interfaces import ICatalog
+
+class PreviewsCatalogView(WizardStep):
 
     title = _(u'Previews Catalog')
     label = _(u'You can rebuild Previews')
-    fields = Fields(IPreviewsCatalog)
 
     def update(self):
+        super(PreviewsCatalogView, self).update()
+
         request = self.request
         context = removeAllProxies(self.context)
 
@@ -68,14 +72,32 @@ class PreviewsCatalogView(WizardStepForm):
                     modified=record.parent.modified,
                     recordId=id)
 
-class PreviewsCatalogBuildView(WizardStepForm):
+class PreviewsCatalogBuildView(WizardStep):
 
     title = _(u'Create Previews for All Files')
     label = _(u'Build previews')
-    fields = {}
 
     def update(self):
+        super(PreviewsCatalogBuildView, self).update()
         request = self.request
+        context = removeAllProxies(self.context)
+        
+        catalog = getUtility(ICatalog)
+        preview_catalog = getUtility(IPreviewsCatalog)
+        
+        files = catalog.searchResults(type={'any_of': ['contenttype.file']})
         
         if 'form.button.build' in request:
-            print 'build'
+
+            for r in files:
+                preview_catalog.add(r.data)
+            
+            IStatusMessage(request).add(
+                _('Previews catalog has been builded.'))
+
+        elif 'form.button.build_selected' in request:
+            for id in request.get('form.checkbox.id', ()):
+                print id
+
+        results = [f for f in files if preview_catalog.add(f.data)]#no, my own check here - previews can re-build here, if mode for catalog switched in `check` mode
+        self.batch = Batch(results, size=20, context=context, request=request)

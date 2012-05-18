@@ -1,13 +1,31 @@
-<div class="z-topframe">
-  <h1 class="z-content-title"
-      tal:content="context/__title__"></h1>
+<div class="z-topframe"
+     tal:define="batch view/batch">
   <div class="z-page-description"
-       tal:content="context/__description__"></div>
+       tal:content="view/label"></div>
 
   <form action="build_all" method="post">
-    <p>bla-bla</p>
+    <p><b>Attention!</b> This operation is very resource-intensive.</p>
+    <table class="z-table">
+      <thead>
+        <tr>
+          <th></th>
+        </tr>
+      </thead>
+
+      <tal:block tal:repeat="record batch">
+        <!-- condition for empty object -->
+        <tr tal:attributes="class python:repeat['record'].odd() and 'even' or 'odd'">
+          <td>
+            <input type="checkbox" name="form.checkbox.id:list"
+                   tal:attributes="value record/id"/>
+          </td>
+        </tr>
+      </tal:block>
+    </table>
     <div class="z-form-controls">
       <hr />
+      <input type="submit" class="z-form-standalonebtn" i18n:attributes="value"
+             name="form.button.build_selected" value="Build Selected Previews" />
       <input type="submit" class="z-form-standalonebtn" i18n:attributes="value"
              name="form.button.build" value="Build Previews" />
     </div>

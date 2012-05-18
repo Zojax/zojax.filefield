@@ -1,8 +1,6 @@
 <div class="z-topframe" tal:define="batch view/batch">
-  <h1 class="z-content-title"
-      tal:content="context/__title__"></h1>
   <div class="z-page-description"
-       tal:content="context/__description__"></div>
+       tal:content="view/label"></div>
 
   <tal:block content="structure view/batch/@@pagelet/batch.view" />
   <form action="rebuild" method="post" tal:condition="batch">
