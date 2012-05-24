@@ -86,5 +86,5 @@ def test_suite():
         FunctionalDocFileSuite("image.txt"),
         fromDocFile('widget.txt'),
         fromDocFile('download.txt'),
-        #fromDocFile('configlet.txt'),
+        fromDocFile('configlet.txt'),
         ))

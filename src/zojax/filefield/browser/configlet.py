@@ -16,18 +16,18 @@
 $Id$
 """
 from zope.proxy import removeAllProxies
-from zope.component import getUtility
+from zope.component import getUtility, getUtilitiesFor
 from zope.app.intid.interfaces import IIntIds
+from zope import interface
 
 from zojax.batching.batch import Batch
-
 from zojax.statusmessage.interfaces import IStatusMessage
-
-from ..interfaces import _, IPreviewsCatalog
-
+from zojax.content.type.interfaces import IContentType
 from zojax.wizard.step import WizardStep
-
 from zojax.catalog.interfaces import ICatalog
+
+from ..interfaces import _, IPreviewsCatalog, IFileField, IImageField
+
 
 class PreviewsCatalogView(WizardStep):
 
@@ -83,42 +83,72 @@ class PreviewsCatalogBuildView(WizardStep):
 
     title = _(u'Create Previews for All Files')
     label = _(u'Build previews')
+    
+    def __init__(self, *args, **kwargs):
+        super(PreviewsCatalogBuildView, self).__init__(*args, **kwargs)
+        self.f2c_mapping = self.getFieldNameToContentTypeMapping()
+        self.catalog = getUtility(ICatalog)
+        self.preview_catalog = getUtility(IPreviewsCatalog)
+        self.int_ids = getUtility(IIntIds)
 
     def update(self):
         super(PreviewsCatalogBuildView, self).update()
         request = self.request
         context = removeAllProxies(self.context)
         
-        catalog = getUtility(ICatalog)
-        preview_catalog = getUtility(IPreviewsCatalog)
-        int_ids = getUtility(IIntIds)
-        
-        files = catalog.searchResults(type={'any_of': ['contenttype.file']})
+        filefield_objects = self.catalog\
+            .searchResults(type={'any_of': self.f2c_mapping.keys()})
         
         if 'form.button.build' in request:
-
-            for r in files:
-                preview_catalog.add(r.data)
+            for obj in filefield_objects:
+                self.previewForObject(obj)
             
             IStatusMessage(request).add(
                 _('Previews catalog has been builded.'))
 
         elif 'form.button.build_selected' in request:
             for id in request.get('form.checkbox.id', ()):
-                preview_catalog.add(int_ids.queryObject(int(id)).data)
+                obj = self.int_ids.queryObject(int(id))
+                self.previewForObject(obj)
 
             IStatusMessage(request).add(
                 _('Previews for selected files has been builded.'))
 
-        #previews can re-build here
-        #if mode for preview catalog's mode switched in `check`
-        #lets set allow_auto_generate=False flag
-        results = [f for f in files
-                   if not preview_catalog.check(f.data,
-                                                allow_auto_generate=False)]
+        results = [o for o in filefield_objects if self.previewsNotExists(o)]
         self.batch = Batch(results, size=20, context=context, request=request)
 
-    def getInfo(self, file):
-        int_ids = getUtility(IIntIds)
-        return dict(id=int_ids.getId(file),
-                    name=file.data.filename)
+    def previewsNotExists(self, obj):
+        file_fields = self.f2c_mapping[IContentType(obj).name]
+        for f in file_fields:
+            file = getattr(obj, f, None)
+            if file and file.data:
+                #previews can re-build here
+                #if mode for preview catalog's mode switched in `check`
+                #lets set allow_auto_generate=False flag
+                if not self.preview_catalog.check(file,
+                                                  allow_auto_generate=False):
+                    return True
+        return False
+
+    def getInfo(self, obj):
+        return dict(id=self.int_ids.getId(obj),
+                    title=obj.title,
+                    files=[getattr(obj, f)
+                           for f in self.f2c_mapping[IContentType(obj).name]])
+
+    def getFieldNameToContentTypeMapping(self):
+        mapping = {}
+
+        for n, u in getUtilitiesFor(IContentType):
+            for f in u.schema.names():
+                ifaces = list(interface.providedBy(u.schema[f]))
+                if IFileField in ifaces or IImageField in ifaces :
+                    if n not in mapping:
+                        mapping[n]=[]
+                    mapping[n].append(f)
+
+        return mapping
+
+    def previewForObject(self, obj):
+        for f in self.f2c_mapping[IContentType(obj).name]:
+            self.preview_catalog.add(getattr(obj, f, None))

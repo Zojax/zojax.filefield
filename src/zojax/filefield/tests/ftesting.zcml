@@ -1,7 +1,10 @@
 <configure
    xmlns="http://namespaces.zope.org/zope"
    xmlns:browser="http://namespaces.zope.org/browser"
+   xmlns:zojax="http://namespaces.zope.org/zojax"
    i18n_domain="zojax.filefield">
+   
+  <exclude package="zc.copy" file="overrides.zcml" />
 
   <include package="zojax.autoinclude" file="meta.zcml" />
   <includeAllDependencies package="zojax.filefield" extras="test" />
@@ -31,6 +34,13 @@
 
   <grantAll role="zope.Manager" />
 
+  <zojax:content
+      title="MyContent"
+      name="content.mycontent"
+      class="zojax.filefield.tests.content.MyContent"
+      ctclass="zojax.filefield.tests.content.MyContentType"
+      schema="zojax.filefield.tests.content.IMyContent"
+      description="Simple content type."/>
 
   <unauthenticatedPrincipal id="zope.anybody" title="Unauthenticated User" />
 

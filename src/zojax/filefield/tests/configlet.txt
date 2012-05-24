@@ -2,41 +2,155 @@
 Configlet
 =====
 
-    >>> from zope import interface, component
-    >>> from zope.interface.verify import verifyObject
+    >>> import transaction
+    >>> from zope import interface, event
     >>> from zope.testbrowser.testing import Browser
     >>> from zope.app.component.hooks import setSite
-    >>> from zope.app.folder.folder import Folder
-    >>> from zope.app.security.interfaces import IAuthentication
-    >>> from zope.security.management import newInteraction, endInteraction
+    >>> from zope.component import getUtilitiesFor, getUtility
 
+    >>> from zope.app.intid import IntIds
+    >>> from zope.app.intid.interfaces import IIntIds
+
+    >>> from zojax.catalog.interfaces import ICatalog
+    >>> from zojax.catalog.configlet import Catalog
+    >>> from zojax.catalog.defaultindexes import typeIndex
+    >>> from zojax.content.type.interfaces import IContentType
+ 
     >>> from zojax.filefield.interfaces import IPreviewsCatalog
-    >>> from zojax.filefield.interfaces import IPreviewDataEvent
+    >>> from zojax.filefield.configlet import PreviewsCatalog
+    >>> from zojax.filefield.tests.content import MyContent
+    >>> from zojax.filefield.data import File, FileData
 
     >>> root = getRootFolder()
     >>> setSite(root)
-    >>> sm = root.getSiteManager()
 
-    >>> folder = Folder()
-    >>> root['folder'] = folder
-    >>> folder1 = Folder()
-    >>> root['folder']['folder1'] = folder1
-    >>> folder2 = Folder()
-    >>> root['folder']['folder2'] = folder2
+    >>> root['ids'] = IntIds()
+    >>> root.getSiteManager().registerUtility(root['ids'], IIntIds)
+    >>> root['catalog'] = Catalog()
+    >>> root.getSiteManager().registerUtility(root['catalog'], ICatalog)
+    
+    >>> int_ids = getUtility(IIntIds)
+    >>> catalog = getUtility(ICatalog)
+    >>> preview_catalog = getUtility(IPreviewsCatalog)
 
-    >>> configlet = sm.getUtility(IPreviewsCatalog)
-    >>> verifyObject(IPreviewsCatalog, configlet)
+    >>> u'type' in [i.__name__ for i in list(catalog.getIndexes())]
     True
+    >>> u'content.mycontent' in [i for i, j in getUtilitiesFor(IContentType)]
+    True
+    
+    >>> admin = Browser()
+    >>> admin.handleErrors = False
+    >>> admin.addHeader("Authorization", "Basic mgr:mgrpw")
+    
+    >>> admin.open('http://localhost/settings/')
+    >>> admin.getLink('Previews Catalog').click()
 
-    >>> class Participation:
-    ...     interaction = None
-    ...     def __init__(self, principal):
-    ...         self.principal = principal
+    >>> admin.getLink('Manage Previews').click()
+    >>> print admin.contents
+    <html>
+    ...
+      <div>
+        There is no any previews in catalog.
+      </div>
+    ...
+    </html>
 
-    >>> auth = sm.getUtility(IAuthentication)
+    >>> admin.getLink('Manage Content Objects').click()
+    >>> print admin.contents
+    <html>
+    ...
+      <div>
+        There is no any content objects without previews.
+      </div>
+    ...
+    </html>
 
-    >>> endInteraction()
-    >>> newInteraction(Participation(auth.getPrincipal('zope.mgr')))
+    >>> content = MyContent()
+    >>> from zojax.filefield.data import File
+    >>> file = File()
+    >>> file.filename = "test.txt"
+    >>> file.mimeType = "text/plain"
+    >>> file.data = '123'
+    >>> root['file'] = file
+    >>> root['mycontent'] = content
+    >>> root['mycontent'].data = root['file']
+    
+
+    Checking preview
+    >>> int_ids.getId(root['mycontent'].data) in list(preview_catalog.records.keys())
+    False
+    >>> admin.getLink('Manage Previews').click()
+    >>> print admin.contents
+    <html>
+    ...
+      <div>
+        There is no any previews in catalog.
+      </div>
+    ...
+    </html>
+
+    No Event - no preview, guys!
+
+    >>> from zope.lifecycleevent import ObjectModifiedEvent
+    >>> event.notify(ObjectModifiedEvent(root['mycontent'].data))
+    
+    #>>> int_ids.getId(root['mycontent'].data) in list(preview_catalog.records.keys())
+    #True
+    >>> admin.getLink('Manage Previews').click()
+    >>> print admin.contents
+    <html>
+    ...
+            <tr class="odd">
+              <td>
+                <input type="checkbox" name="form.checkbox.record_id:list" value="..." />
+              </td>
+              <td>test.txt</td>
+              <td>text/plain</td>
+              <td>...</td>
+            </tr>
+    ...
+    </html>
+
+    Out object in catalog and will be listed in `Manage Content Objects` tab?
+
+    >>> list(catalog['type'].values())
+    [u'content.mycontent']
+
+    >>> admin.getLink('Manage Content Objects').click()
+    >>> print admin.contents
+    <html>
+    ...<input type="checkbox" name="form.checkbox.id:list" value="..." />
+    ...<a href="http://localhost/mycontent"></a>
+    ...
+    </html>
+
+    >>> admin.getLink('Manage Content Objects').click()
+    >>> admin.getControl(name="form.checkbox.id:list", index=0).value=['true']
+    >>> admin.getControl(name="form.button.build_selected").click()
+    
+    >>> print admin.contents
+    <html>
+    ...<div class="statusMessage">Previews for selected files has been builded.</div>
+    ...<div>
+        There is no any content objects without previews.
+      </div>
+    ...
+    </html>
+    
+    >>> admin.getLink('Manage Previews').click()
+    >>> print admin.contents
+    <html>
+    ...
+            <tr class="odd">
+              <td>
+                <input type="checkbox" name="form.checkbox.record_id:list" value="..." />
+              </td>
+              <td>test.txt</td>
+              <td>text/plain</td>
+              <td>...</td>
+            </tr>
+    ...
+    </html>
 
 
 

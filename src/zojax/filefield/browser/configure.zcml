@@ -79,27 +79,27 @@
 
   <!-- configlet rebuild -->
   <zojax:pagelet
-     name="rebuild"
+     name="manage_previews"
      type="wizard.step"
-     title="Created Previews"
-     label="Rebuild previews"
+     title="Manage Previews"
+     label="Rebuild Previews"
      for="..interfaces.IPreviewsCatalog
           zojax.controlpanel.browser.interfaces.IConfigletEditWizard"
      template="rebuild.pt"
-     class=".configlet_views.PreviewsCatalogView"
+     class=".configlet.PreviewsCatalogView"
      permission="zojax.Configure"
      weight="200" />
 
   <!-- configlet rebuild all -->
   <zojax:pagelet
-     name="build_all"
+     name="manage_content"
      type="wizard.step"
-     title="Create Previews for All Files"
-     label="Build previews"
+     title="Manage Content Objects"
+     label="Build previews for content types with file fields"
      for="..interfaces.IPreviewsCatalog
       zojax.controlpanel.browser.interfaces.IConfigletEditWizard"
      template="build.pt"
-     class=".configlet_views.PreviewsCatalogBuildView"
+     class=".configlet.PreviewsCatalogBuildView"
      permission="zojax.Configure"
      weight="300" />
 

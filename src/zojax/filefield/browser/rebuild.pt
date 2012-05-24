@@ -1,9 +1,7 @@
-<div class="z-topframe" tal:define="batch view/batch">
+<div class="z-topframe"
+     tal:define="batch view/batch">
   <div class="z-page-description"
        tal:content="view/label"></div>
-
-  <tal:block content="structure view/batch/@@pagelet/batch.view" />
-  <form action="rebuild" method="post" tal:condition="batch">
     <table class="z-table">
       <thead>
         <tr>
@@ -39,7 +37,6 @@
       <input type="submit" class="z-form-standalonebtn" i18n:attributes="value"
              name="form.button.rebuild" value="Rebuild Previews" />
     </div>
-  </form>
 
   <div tal:condition="not:batch">
     There is no any previews in catalog.

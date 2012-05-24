@@ -2,14 +2,13 @@
      tal:define="batch view/batch">
   <div class="z-page-description"
        tal:content="view/label"></div>
-
-  <form action="build_all" method="post">
     <p><b>Attention!</b> This operation is very resource-intensive.</p>
     <table class="z-table">
       <thead>
         <tr>
           <th></th>
-          <th>File</th>
+          <th>Content Item</th>
+          <th>Files</th>
         </tr>
       </thead>
 
@@ -19,9 +18,18 @@
             tal:attributes="class python:repeat['record'].odd() and 'even' or 'odd'">
           <td>
             <input type="checkbox" name="form.checkbox.id:list"
-                   tal:attributes="value info/id"/>
+                   tal:attributes="value info/id" />
           </td>
-          <td tal:content="info/name"></td>
+          <td><a tal:content="info/title"
+                 tal:attributes="href record/@@absolute_url">Title</a>
+          </td>
+          <td>
+            <tal:files repeat="file info/files">
+              <tal:file content="string:${file/filename} - ${file/mimeType}">
+              1.pdf - application/pdf
+              </tal:file><br/>
+            </tal:files>
+          </td>
         </tr>
       </tal:block>
     </table>
@@ -32,5 +40,7 @@
       <input type="submit" class="z-form-standalonebtn" i18n:attributes="value"
              name="form.button.build" value="Build Previews" />
     </div>
-  </form>
+  <div tal:condition="not:batch">
+    There is no any content objects without previews.
+  </div>
 </div>
