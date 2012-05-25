@@ -13,7 +13,6 @@
       </thead>
 
       <tal:block tal:repeat="record batch">
-        <!-- condition for empty object -->
         <tr tal:define="info python:view.getInfo(record)"
             tal:condition="info/mimeType"
             tal:attributes="class python:repeat['record'].odd() and 'even' or 'odd'">

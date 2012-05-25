@@ -3,8 +3,6 @@
    xmlns:browser="http://namespaces.zope.org/browser"
    xmlns:zojax="http://namespaces.zope.org/zojax"
    i18n_domain="zojax.filefield">
-   
-  <exclude package="zc.copy" file="overrides.zcml" />
 
   <include package="zojax.autoinclude" file="meta.zcml" />
   <includeAllDependencies package="zojax.filefield" extras="test" />
@@ -40,7 +38,19 @@
       class="zojax.filefield.tests.content.MyContent"
       ctclass="zojax.filefield.tests.content.MyContentType"
       schema="zojax.filefield.tests.content.IMyContent"
-      description="Simple content type."/>
+      contenttype="zojax.filefield.tests.content.IMyContentType"
+      description="Simple content type." />
+      
+      <class class="zojax.filefield.tests.content.MyContent">
+        <implements interface="zojax.content.type.interfaces.ISearchableContent" />
+      </class>
+
+      <class class="zojax.filefield.tests.content.MyContentType">
+        <require
+          permission="zope.Public"
+          interface="zojax.content.type.interfaces.IContentType
+                     zope.location.interfaces.ILocation" />
+    </class>
 
   <unauthenticatedPrincipal id="zope.anybody" title="Unauthenticated User" />
 

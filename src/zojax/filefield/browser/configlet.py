@@ -15,6 +15,8 @@
 
 $Id$
 """
+import transaction
+
 from zope.proxy import removeAllProxies
 from zope.component import getUtility, getUtilitiesFor
 from zope.app.intid.interfaces import IIntIds
@@ -27,6 +29,7 @@ from zojax.wizard.step import WizardStep
 from zojax.catalog.interfaces import ICatalog
 
 from ..interfaces import _, IPreviewsCatalog, IFileField, IImageField
+from ..configlet import logger
 
 
 class PreviewsCatalogView(WizardStep):
@@ -41,21 +44,28 @@ class PreviewsCatalogView(WizardStep):
         context = removeAllProxies(self.context)
 
         if 'form.button.rebuild' in request:
-            for oid, record in context.records.items():
+            logger.info('Start rebuilding all previews')
+            commit_after_objects = 50
+            for i, e in enumerate(context.records.items()):
+                oid, record = e
                 if not record.parent.mimeType:
                     context.remove(oid)
                     continue
 
                 # NOTE: generate new Preview
                 record.parent.generatePreview()
+                if i and not i % commit_after_objects:
+                    transaction.commit()
+                    logger.info('%d processed' % commit_after_objects)
 
             IStatusMessage(request).add(
                 _('Previews catalog has been rebuilded.'))
+            logger.info('Done rebuild all previews')
 
         elif 'form.button.rebuild_selected' in request:
             for oid in request.get('form.checkbox.record_id', ()):
                 try:
-                    context.records[int(rid)].parent.generatePreview()
+                    context.records[int(oid)].parent.generatePreview()
                 except KeyError:
                     pass
             IStatusMessage(request).add(

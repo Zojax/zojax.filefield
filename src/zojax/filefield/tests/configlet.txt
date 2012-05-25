@@ -8,42 +8,58 @@ Configlet
     >>> from zope.app.component.hooks import setSite
     >>> from zope.component import getUtilitiesFor, getUtility
 
+    >>> from zope.lifecycleevent import ObjectCreatedEvent, ObjectModifiedEvent
+
     >>> from zope.app.intid import IntIds
     >>> from zope.app.intid.interfaces import IIntIds
 
     >>> from zojax.catalog.interfaces import ICatalog
     >>> from zojax.catalog.configlet import Catalog
+
     >>> from zojax.catalog.defaultindexes import typeIndex
+
     >>> from zojax.content.type.interfaces import IContentType
  
     >>> from zojax.filefield.interfaces import IPreviewsCatalog
     >>> from zojax.filefield.configlet import PreviewsCatalog
+
     >>> from zojax.filefield.tests.content import MyContent
-    >>> from zojax.filefield.data import File, FileData
+    >>> from zojax.filefield.data import FileData
 
     >>> root = getRootFolder()
     >>> setSite(root)
+
+    Install utils
 
     >>> root['ids'] = IntIds()
     >>> root.getSiteManager().registerUtility(root['ids'], IIntIds)
     >>> root['catalog'] = Catalog()
     >>> root.getSiteManager().registerUtility(root['catalog'], ICatalog)
-    
+
     >>> int_ids = getUtility(IIntIds)
     >>> catalog = getUtility(ICatalog)
-    >>> preview_catalog = getUtility(IPreviewsCatalog)
+    >>> previews_catalog = getUtility(IPreviewsCatalog)
+
+    We need this index later
 
     >>> u'type' in [i.__name__ for i in list(catalog.getIndexes())]
     True
+
+    And this content type
+
     >>> u'content.mycontent' in [i for i, j in getUtilitiesFor(IContentType)]
     True
-    
+
+    Let's login
+
     >>> admin = Browser()
     >>> admin.handleErrors = False
     >>> admin.addHeader("Authorization", "Basic mgr:mgrpw")
-    
+
     >>> admin.open('http://localhost/settings/')
     >>> admin.getLink('Previews Catalog').click()
+
+    No content objects with FileFields and no previews
 
     >>> admin.getLink('Manage Previews').click()
     >>> print admin.contents
@@ -54,6 +70,8 @@ Configlet
       </div>
     ...
     </html>
+
+    No content objects w/o previews
 
     >>> admin.getLink('Manage Content Objects').click()
     >>> print admin.contents
@@ -65,20 +83,19 @@ Configlet
     ...
     </html>
 
-    >>> content = MyContent()
-    >>> from zojax.filefield.data import File
-    >>> file = File()
-    >>> file.filename = "test.txt"
-    >>> file.mimeType = "text/plain"
-    >>> file.data = '123'
-    >>> root['file'] = file
-    >>> root['mycontent'] = content
-    >>> root['mycontent'].data = root['file']
-    
+    Let's create one
 
-    Checking preview
-    >>> int_ids.getId(root['mycontent'].data) in list(preview_catalog.records.keys())
+    >>> root['mycontent'] = MyContent()
+    >>> root['mycontent'].data = FileData('test', mimeType='text/plain', filename="test.txt")
+    >>> transaction.commit()
+
+    Preview exists?
+
+    >>> previews_catalog.check(root['mycontent'].data, allow_auto_generate=False)
     False
+
+    Let's check same in configlet
+
     >>> admin.getLink('Manage Previews').click()
     >>> print admin.contents
     <html>
@@ -89,13 +106,16 @@ Configlet
     ...
     </html>
 
-    No Event - no preview, guys!
-
-    >>> from zope.lifecycleevent import ObjectModifiedEvent
-    >>> event.notify(ObjectModifiedEvent(root['mycontent'].data))
+    No ObjectModifiedEvent - no preview, guys! (by default)
     
-    #>>> int_ids.getId(root['mycontent'].data) in list(preview_catalog.records.keys())
-    #True
+    >>> previews_catalog.generateMethod == 'upload'
+    True
+    >>> event.notify(ObjectModifiedEvent(root['mycontent'].data))
+    >>> previews_catalog.check(root['mycontent'].data, allow_auto_generate=False)
+    True
+
+    Same in configlet
+
     >>> admin.getLink('Manage Previews').click()
     >>> print admin.contents
     <html>
@@ -116,30 +136,25 @@ Configlet
     >>> list(catalog['type'].values())
     [u'content.mycontent']
 
-    >>> admin.getLink('Manage Content Objects').click()
-    >>> print admin.contents
-    <html>
-    ...<input type="checkbox" name="form.checkbox.id:list" value="..." />
-    ...<a href="http://localhost/mycontent"></a>
-    ...
-    </html>
+    Let's check (we having preview, don't forget)
 
     >>> admin.getLink('Manage Content Objects').click()
-    >>> admin.getControl(name="form.checkbox.id:list", index=0).value=['true']
-    >>> admin.getControl(name="form.button.build_selected").click()
-    
     >>> print admin.contents
     <html>
-    ...<div class="statusMessage">Previews for selected files has been builded.</div>
-    ...<div>
+    ...
+      <div>
         There is no any content objects without previews.
       </div>
     ...
     </html>
-    
+
+    Rebuild all previews
+
     >>> admin.getLink('Manage Previews').click()
+    >>> admin.getControl(name="form.button.rebuild").click()
     >>> print admin.contents
     <html>
+    ...<div class="statusMessage">Previews catalog has been rebuilded.</div>
     ...
             <tr class="odd">
               <td>
@@ -152,16 +167,104 @@ Configlet
     ...
     </html>
 
+    Rebuild selected previews
 
+    >>> admin.getLink('Manage Previews').click()
+    >>> admin.getControl(name="form.checkbox.record_id:list", index=0).value=['true']
+    >>> admin.getControl(name="form.button.rebuild_selected").click()
+    >>> print admin.contents
+    <html>
+    ...<div class="statusMessage">Selected reviews has been rebuilded.</div>
+    ...
+            <tr class="odd">
+              <td>
+                <input type="checkbox" name="form.checkbox.record_id:list" value="..." />
+              </td>
+              <td>test.txt</td>
+              <td>text/plain</td>
+              <td>...</td>
+            </tr>
+    ...
+    </html>
 
-add record
-----------
+    Remove selected previews
 
-update record
--------------
+    >>> admin.getLink('Manage Previews').click()
+    >>> admin.getControl(name="form.checkbox.record_id:list", index=0).value=['true']
+    >>> admin.getControl(name="form.button.remove_selected").click()
+    >>> print admin.contents
+    <html>
+    ...<div class="statusMessage">Selected reviews has been removed.</div>
+    ...
+      <div>
+        There is no any previews in catalog.
+      </div>
+    ...
+    </html>
 
-check record
-------------
+    So, now we having content object w/o preview
 
-remove record
--------------
+    >>> admin.getLink('Manage Content Objects').click()
+    >>> print admin.contents
+    <html>
+    ...
+            <tr class="odd">
+              <td>
+                <input type="checkbox" name="form.checkbox.id:list" value="..." />
+              </td>
+              <td><a href="http://localhost/mycontent"></a>
+              </td>
+              <td>
+                test.txt - text/plain<br />
+    ...
+    </html>
+
+    Build selected
+
+    >>> admin.getControl(name="form.checkbox.id:list").value=['true']
+    >>> admin.getControl(name="form.button.build_selected").click()
+    >>> print admin.contents
+    <html>
+    ...<div class="statusMessage">Previews for selected files has been builded.</div>
+    ...
+      <div>
+        There is no any content objects without previews.
+      </div>
+    ...
+    </html>
+
+    Delete all existing previews
+
+    >>> del previews_catalog.data.records
+
+    Again here, good
+
+    >>> admin.getLink('Manage Content Objects').click()
+    >>> print admin.contents
+    <html>
+    ...
+            <tr class="odd">
+              <td>
+                <input type="checkbox" name="form.checkbox.id:list" value="..." />
+              </td>
+              <td><a href="http://localhost/mycontent"></a>
+              </td>
+              <td>
+                test.txt - text/plain<br />
+    ...
+    </html>
+
+    Build all previews
+
+    >>> admin.getControl(name="form.button.build").click()
+    >>> print admin.contents
+    <html>
+    ...<div class="statusMessage">Previews catalog has been builded.</div>
+    ...
+      <div>
+        There is no any content objects without previews.
+      </div>
+    ...
+    </html>
+
+    >>> setSite(None)
