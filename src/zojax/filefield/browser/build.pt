@@ -6,7 +6,7 @@
     <table class="z-table">
       <thead>
         <tr>
-          <th></th>
+          <th><input type="checkbox" name="form.checkbox.all_ids" /></th>
           <th>Content Item</th>
           <th>Files</th>
         </tr>
@@ -43,3 +43,11 @@
     There is no any content objects without previews.
   </div>
 </div>
+
+<script type='text/javascript'>
+$(document).ready(function() {
+    $('input[name="form.checkbox.all_ids"]').click(function(){
+        $('input[name="form.checkbox.id:list"]').attr('checked', $(this).attr('checked'));
+    })
+})
+</script>
