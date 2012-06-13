@@ -93,7 +93,7 @@ class PreviewsCatalogBuildView(WizardStep):
 
     title = _(u'Create Previews for All Files')
     label = _(u'Build previews')
-    
+
     def __init__(self, *args, **kwargs):
         super(PreviewsCatalogBuildView, self).__init__(*args, **kwargs)
         self.f2c_mapping = self.getFieldNameToContentTypeMapping()
@@ -105,14 +105,15 @@ class PreviewsCatalogBuildView(WizardStep):
         super(PreviewsCatalogBuildView, self).update()
         request = self.request
         context = removeAllProxies(self.context)
-        
+
         filefield_objects = self.catalog\
-            .searchResults(type={'any_of': self.f2c_mapping.keys()})
-        
+            .searchResults(type={'any_of': self.f2c_mapping.keys()},
+                           sort_on='modified', sort_order='reverse')
+
         if 'form.button.build' in request:
             for obj in filefield_objects:
                 self.previewForObject(obj)
-            
+
             IStatusMessage(request).add(
                 _('Previews catalog has been builded.'))
 
