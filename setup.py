@@ -70,6 +70,7 @@ setup(name = 'zojax.filefield',
                           'zojax.resource',
                           'zojax.resourcepackage',
                           'zojax.jquery.media',
+                          'zojax.batching',
                           'zojax.wizard'
                           ],
       extras_require = dict(test=['zope.app.testing',

@@ -2,6 +2,7 @@
      tal:define="batch view/batch">
   <div class="z-page-description"
        tal:content="view/label"></div>
+    <tal:block content="structure batch/@@pagelet/batch.view" />
     <table class="z-table">
       <thead>
         <tr>
