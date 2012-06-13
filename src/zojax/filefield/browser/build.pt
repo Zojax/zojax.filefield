@@ -3,6 +3,7 @@
   <div class="z-page-description"
        tal:content="view/label"></div>
     <p><b>Attention!</b> This operation is very resource-intensive.</p>
+    <tal:block content="structure batch/@@pagelet/batch.view" />
     <table class="z-table">
       <thead>
         <tr>
