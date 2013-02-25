@@ -136,7 +136,13 @@ class PreviewsCatalog(object):
             return
 
         try:
-            return hash(KeyReferenceToPersistent(object))
+            oid = hash(KeyReferenceToPersistent(object))
+
+            # negative hash means file was not uploaded
+            if oid <= 0:
+                return
+
+            return oid
         except NotYet:
             return
 
