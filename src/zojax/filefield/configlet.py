@@ -82,7 +82,7 @@ class PreviewsCatalog(object):
             del self.records[oid]
 
     def check(self, object=None, allow_auto_generate=True):
-        
+
         if object is None or not IFile.providedBy(object):
             return
 
@@ -95,7 +95,8 @@ class PreviewsCatalog(object):
         else:
             if allow_auto_generate and ('check' in self.generateMethod):
                 self.add(object)
-                if self.records[oid].previewSize > 0:
+                # NOTE: there is no oid in self.records if file is missing
+                if self.records.has_key(oid) and self.records[oid].previewSize > 0:
                     return True
 
             return False
@@ -136,13 +137,14 @@ class PreviewsCatalog(object):
             return
 
         try:
-            oid = hash(KeyReferenceToPersistent(object))
+            return hash(KeyReferenceToPersistent(object))
+            #oid = hash(KeyReferenceToPersistent(object))
 
-            # negative hash means file was not uploaded
-            if oid <= 0:
-                return
+            ## negative hash means file was not uploaded
+            #if oid <= 0:
+            #    return
 
-            return oid
+            #return oid
         except NotYet:
             return
 
@@ -207,7 +209,8 @@ class PreviewRecord(Persistent):
                 fp.write(api.convert(ff, 'application/x-shockwave-flash', self.parent.mimeType, filename=self.parent.filename))
                 size = int(fp.tell())
             except ConverterException, e:
-                logger.warning('Error generating preview: %s', e)
+                logger.warning(
+                    'Error generating preview for %s: %s', self.parent.filename, e)
             finally:
                 ff.close()
                 fp.close()
