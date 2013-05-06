@@ -125,8 +125,10 @@ class PreviewsCatalogBuildView(WizardStep):
             IStatusMessage(request).add(
                 _('Previews for selected files has been builded.'))
 
-        results = [o for o in filefield_objects if self.previewsNotExists(o)]
-        self.batch = Batch(results, size=20, context=context, request=request)
+        #results = [o for o in filefield_objects if self.previewsNotExists(o)]
+        #self.batch = Batch(results, size=20, context=context, request=request)
+        self.batch = Batch(filefield_objects,
+                           size=20, context=context, request=request)
 
     def previewsNotExists(self, obj):
         file_fields = self.f2c_mapping[IContentType(obj).name]
@@ -142,10 +144,16 @@ class PreviewsCatalogBuildView(WizardStep):
         return False
 
     def getInfo(self, obj):
+        try:
+            files = [getattr(obj, f)
+                     for f in self.f2c_mapping[IContentType(obj).name]]
+        except:
+            files = []
+
         return dict(id=self.int_ids.getId(obj),
                     title=obj.title,
-                    files=[getattr(obj, f)
-                           for f in self.f2c_mapping[IContentType(obj).name]])
+                    noPreview=self.previewsNotExists(obj),
+                    files=files)
 
     def getFieldNameToContentTypeMapping(self):
         mapping = {}

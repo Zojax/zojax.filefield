@@ -2,7 +2,9 @@
      tal:define="batch view/batch">
   <div class="z-page-description"
        tal:content="view/label"></div>
-    <p><b>Attention!</b> This operation is very resource-intensive.</p>
+    <p><b>Attention!</b> This operation is very resource-intensive.<br />
+       <b>Note:</b> the previews are already generated for green items
+    </p>
     <tal:block content="structure batch/@@pagelet/batch.view" />
     <table class="z-table">
       <thead>
@@ -18,12 +20,14 @@
             tal:attributes="class python:repeat['record'].odd() and 'even' or 'odd'">
           <td>
             <input type="checkbox" name="form.checkbox.id:list"
-                   tal:attributes="value info/id" />
+                   tal:attributes="value info/id"
+                   tal:condition="info/noPreview" />
           </td>
           <td><a tal:content="info/title"
-                 tal:attributes="href record/@@absolute_url">Title</a>
+                 tal:attributes="href record/@@absolute_url;
+                                 style python:not info['noPreview'] and 'color:Green' or 'color:Red'">Title</a>
           </td>
-          <td>
+          <td tal:attributes="style python:not info['noPreview'] and 'color:Green' or 'color:Red'">
             <tal:files repeat="file info/files">
               <tal:file content="string:${file/filename} - ${file/mimeType}">
               1.pdf - application/pdf
