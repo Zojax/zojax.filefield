@@ -14,6 +14,7 @@
 from zope.size import byteDisplay
 from zope.size.interfaces import ISized
 from ZODB.interfaces import BlobError
+from ZODB.POSException import POSKeyError
 """
 
 $Id$
@@ -73,10 +74,14 @@ class File(Persistent):
 
     @getproperty
     def data(self):
-        fp = self._blob.open('r')
-        data = fp.read()
-        fp.close()
-        return data
+        try:
+            fp = self._blob.open('r')
+            data = fp.read()
+            fp.close()
+            return data
+        except POSKeyError:
+            print "Found damaged FileField: %s" % (self.filename)
+            return False
 
     @getproperty
     def previewIsAvailable(self):
@@ -91,6 +96,8 @@ class File(Persistent):
             return self.__dict__['size']
         else:
             reader = self.open()
+            if not reader:
+                return 0
             try:
                 reader.seek(0,2)
                 size = int(reader.tell())
@@ -127,11 +134,15 @@ class File(Persistent):
         getUtility(IPreviewsCatalog).remove(self)
 
     def open(self, mode="r"):
-        if 'w' in mode:
-            if 'size' in self.__dict__:
-                del self.__dict__['size']
-            self.modified = zope.datetime.parseDatetimetz(str(datetime.now()))
-        return self._blob.open(mode)
+        try:
+            if 'w' in mode:
+                if 'size' in self.__dict__:
+                    del self.__dict__['size']
+                self.modified = zope.datetime.parseDatetimetz(str(datetime.now()))
+            return self._blob.open(mode)
+        except POSKeyError:
+            print "Found damaged FileField: %s" % (self.filename)
+            return False
 
 
     def openPreview(self, mode="r"):
@@ -288,10 +299,14 @@ class Image(File):
 
     @getproperty
     def data(self):
-        fp = self._blob.open('r')
-        data = fp.read()
-        fp.close()
-        return data
+        try:
+            fp = self._blob.open('r')
+            data = fp.read()
+            fp.close()
+            return data
+        except POSKeyError:
+            print "Found damaged Image %s" % (self.filename)
+            return False
 
     def scale(self, width, height, quality=88):
         self.data = api.convert(
