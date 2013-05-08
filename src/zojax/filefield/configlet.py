@@ -15,25 +15,40 @@
 
 $Id$
 """
-import BTrees, transaction, logging
+import BTrees, transaction, logging, time
 
-from ZODB.blob import Blob
-from ZODB.interfaces import BlobError
+from celery.result import AsyncResult
+
+from datetime import datetime, timedelta
 from persistent import Persistent
 from persistent.interfaces import IPersistent
 from rwproperty import setproperty, getproperty
+from ZODB.blob import Blob
+from ZODB.interfaces import BlobError
 
 from zope import interface, event
+from zope.app.component.hooks import getSite
 from zope.component import getUtility
 from zope.keyreference.interfaces import NotYet
 from zope.keyreference.persistent import KeyReferenceToPersistent
+from zope.traversing.browser import absoluteURL
 
+from zojax.catalog.utils import getRequest
 from zojax.converter import api
 from zojax.converter.interfaces import ConverterException
+from zojax.statusmessage.interfaces import IStatusMessage
 
+from zojax.filefield import tasks
 from interfaces import IPreviewsCatalog, IPreviewRecord, IFile
 
 logger = logging.getLogger('zojax.filefield (configlet)')
+
+try:
+    from hashlib import md5
+except ImportError:
+    from md5 import new as md5
+
+
 
 class PreviewsCatalog(object):
     interface.implements(IPreviewsCatalog)
@@ -198,22 +213,80 @@ class PreviewRecord(Persistent):
                 transaction.commit()
                 return self.openPreviewDetached(n+1)
 
+    def generateFunction(self):
+        size = 0
+        fp = self.openPreview('w')
+        ff = self.parent.open()
+        try:
+            fp.write(api.convert(ff, 'application/x-shockwave-flash', self.parent.mimeType, filename=self.parent.filename))
+            size = int(fp.tell())
+        except ConverterException, e:
+            logger.warning('Error generating preview: %s', e)
+        finally:
+            ff.close()
+            fp.close()
+        return size
+
     def generatePreview(self):
-        MAX_VALUE = getUtility(IPreviewsCatalog).maxValue * 1024 * 1024
+        catalog = getUtility(IPreviewsCatalog)
+        MAX_VALUE = catalog.maxValue * 1024 * 1024
         size = 0
 
         if self.parent.size < MAX_VALUE:
-            fp = self.openPreview('w')
-            ff = self.parent.open()
-            try:
-                fp.write(api.convert(ff, 'application/x-shockwave-flash', self.parent.mimeType, filename=self.parent.filename))
-                size = int(fp.tell())
-            except ConverterException, e:
-                logger.warning(
-                    'Error generating preview for %s: %s', self.parent.filename, e)
-            finally:
-                ff.close()
-                fp.close()
+
+            if catalog.generateWith=='default':
+                size = self.generateFunction()
+
+            elif catalog.generateWith=='celery':
+                msg = msgType = ''
+                portalURL = absoluteURL(getSite(), getRequest())
+
+                # NOTE: unique task id for current file
+                oid = str(hash(KeyReferenceToPersistent(self.parent)))
+                lock_id = "preview.generating-lock-%s" % md5(oid).hexdigest()
+
+                try:
+                    check = AsyncResult(lock_id).state
+                except:
+                    check = "None"
+                print "before - %s" % check
+                # STARTED - has been started
+                # RETRY - is being retried
+                # REVOKED - has been revoked
+                # PENDING - is waiting for execution or unknown
+                # SUCCESS - has been successfully executed
+                # FAILURE - execution resulted in failure
+                if check not in ["STARTED", "RETRY"]:
+
+                    # NOTE: set expire
+                    expires = datetime.now() + timedelta(minutes=30)
+                    tasks.start_generating.apply_async(
+                        args=[oid,portalURL],
+                        expires=expires,
+                        task_id=lock_id,
+                        queue="images",
+                        routing_key="media.image")
+
+                    # NOTE: delay before set StatusMessage
+                    time.sleep(3)
+
+                    if AsyncResult(lock_id).state in ["STARTED", "RETRY"]:
+                        msg = 'Preview will be generated in 1-5 minutes. Thanks for your patience.'
+                        msgType = 'info'
+                    elif AsyncResult(lock_id).state in ["SUCCESS",]:
+                        msg = 'Preview was generated successfully'
+                        msgType = 'info'
+                    else:
+                        msg = 'Preview generation is NOT running'
+                        msgType = 'warning'
+                    print "after - %s" % AsyncResult(lock_id).state
+
+                #else:
+                #    msg = 'Preview generation is already running'
+                #    msgType = 'warning'
+
+                if msg and msgType:
+                    IStatusMessage(getRequest()).add(msg, type=msgType)
 
         self.previewSize = size
         return size

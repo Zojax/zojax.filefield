@@ -55,4 +55,9 @@
   <!-- File modified  -->
   <subscriber handler=".data.fileModifiedHandler" />
 
+  <utility
+     name="zojax.filefield.generate-with"
+     component=".vocabulary.generateWithVocabulary"
+     provides="zope.schema.interfaces.IVocabularyFactory" />
+
 </configure>

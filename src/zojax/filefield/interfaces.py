@@ -204,6 +204,13 @@ class IPreviewsCatalog(interface.Interface):
         default = 50,
         required = True)
 
+    generateWith = RadioChoice(
+        title = _(u'Generate with'),
+        description = _(u'Use Celery only if the application is installed.'),
+        vocabulary = 'zojax.filefield.generate-with',
+        default = u'default',
+        required = True)
+
     records = interface.Attribute('Records')
 
     def add(object):
