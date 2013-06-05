@@ -17,16 +17,13 @@
 $Id$
 """
 
-import time
 from z3c.jsonrpc import publisher
 
-from zope.app.intid.interfaces import IIntIds
 from zope.component import getUtility
 from zope.event import notify
 from zope.lifecycleevent import ObjectModifiedEvent
 
 from zojax.filefield.interfaces import IPreviewsCatalog
-
 
 
 class FileFieldAPI(publisher.MethodPublisher):
@@ -60,4 +57,3 @@ class FileFieldAPI(publisher.MethodPublisher):
             notify(ObjectModifiedEvent(object))
 
         return result
-

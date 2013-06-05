@@ -16,7 +16,9 @@
 $Id$
 """
 
-import time, urllib2, httplib
+import time
+import urllib2
+import httplib
 
 from celery.task import task
 from datetime import datetime
@@ -31,12 +33,13 @@ import logging
 logger = logging.getLogger('zojax.filefield.tasks')
 
 
-
-@task() #(track_started=True)
+@task()  # (track_started=True)
 def start_generating(oid, url):
 
     startTimer = time.time()
-    start_generating.update_state(state='STARTED', meta={'startat': startTimer})
+    start_generating.update_state(
+        state='STARTED',
+        meta={'startat': startTimer})
 
     # NOTE: delay before generation start
     # to avoid KeyError exception on creating object
@@ -70,7 +73,7 @@ def message(text=None, type='info'):
     if type == 'critical':
         logging.critical(text)
 
-    print "%s %s: %s"%(datetime.now(), type, text)
+    print "%s %s: %s" % (datetime.now(), type, text)
 
 
 def prepareUrl(url=None):
@@ -79,7 +82,8 @@ def prepareUrl(url=None):
 
     jsoRPC = "++skin++JSONRPC.filefield"
 
-    if "localhost" in url:
+    # NOTE: workaround for localhost
+    if ":8080" in url:
         o = urlparse(url)
         url = "%s://%s/%s%s" % (o.scheme, o.netloc, jsoRPC, o.path)
     else:
@@ -93,24 +97,28 @@ def jsonRpcRequest(method=None, params=None, jsonRPCUrl=None):
         return
 
     if params:
-        reqParams = "{'method':'%s', 'params': %s}"%(method,params)
+        reqParams = "{'method':'%s', 'params': %s}" % (method, params)
     else:
-        reqParams = "{'method':'%s', 'params': {}}"%method
+        reqParams = "{'method':'%s', 'params': {}}" % method
 
     try:
-        req = urllib2.Request(prepareUrl(jsonRPCUrl),
-            headers = {
-                "Content-Type": "application/json",
-            },
-            data = reqParams)
+        req = urllib2.Request(
+            prepareUrl(jsonRPCUrl),
+            headers={"Content-Type": "application/json", },
+            data=reqParams
+        )
 
         json = eval(urllib2.urlopen(req).read())
 
         # NOTE: standart JSON-RPC error
-        # {"jsonrpc":"2.0","id":"jsonrpc","error":{"message":"Invalid JSON-RPC","code":-32603,"data":"error here"}}
+        # {"jsonrpc":"2.0","id":"jsonrpc","error":{"message": \
+        # "Invalid JSON-RPC","code":-32603,"data":"error here"}}
         if "error" in json:
-            msg = "%s - %s (code: %s)"%(json["error"]["message"], json["error"]["data"], json["error"]["code"])
-            msg = "%s \n %s"%(msg, reqParams)
+            msg = "%s - %s (code: %s)" % (
+                json["error"]["message"],
+                json["error"]["data"],
+                json["error"]["code"])
+            msg = "%s \n %s" % (msg, reqParams)
             message(text=msg, type='critical')
             return
 
@@ -119,15 +127,19 @@ def jsonRpcRequest(method=None, params=None, jsonRPCUrl=None):
         if "result" in json:
             return json["result"]
 
-        message(text="jsonRpcRequest - no error and no result", type='critical')
+        message(
+            text="jsonRpcRequest - no error and no result",
+            type='critical')
         return
 
     except urllib2.URLError, e:
-        message(text="%s | %s"%(e, reqParams), type='critical')
+        message(text="%s | %s" % (e, reqParams), type='critical')
         return
     except httplib.BadStatusLine, e:
-        message(text="%s | %s"%(e, reqParams), type='critical')
+        message(text="%s | %s" % (e, reqParams), type='critical')
         return
     except:
-        message(text="%s | %s"%('Unexpected error in jsonRpcRequest', reqParams), type='critical')
+        message(
+            text="%s | %s" % ('Unexpected error in jsonRpcRequest', reqParams),
+            type='critical')
         return

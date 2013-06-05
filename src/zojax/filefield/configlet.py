@@ -249,7 +249,7 @@ class PreviewRecord(Persistent):
                     check = AsyncResult(lock_id).state
                 except:
                     check = "None"
-                print "before - %s" % check
+
                 # STARTED - has been started
                 # RETRY - is being retried
                 # REVOKED - has been revoked
@@ -279,7 +279,6 @@ class PreviewRecord(Persistent):
                     else:
                         msg = 'Preview generation is NOT running'
                         msgType = 'warning'
-                    print "after - %s" % AsyncResult(lock_id).state
 
                 #else:
                 #    msg = 'Preview generation is already running'
