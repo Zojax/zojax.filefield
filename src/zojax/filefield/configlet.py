@@ -259,7 +259,7 @@ class PreviewRecord(Persistent):
                 if check not in ["STARTED", "RETRY"]:
 
                     # NOTE: set expire
-                    expires = datetime.now() + timedelta(minutes=30)
+                    expires = datetime.now() + timedelta(minutes=60)
                     tasks.start_generating.apply_async(
                         args=[oid,portalURL],
                         expires=expires,

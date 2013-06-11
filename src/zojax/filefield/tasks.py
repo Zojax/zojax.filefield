@@ -21,7 +21,7 @@ import urllib2
 import httplib
 
 from celery.task import task
-from datetime import datetime
+#from datetime import datetime
 from urlparse import urlparse
 
 try:
@@ -33,17 +33,14 @@ import logging
 logger = logging.getLogger('zojax.filefield.tasks')
 
 
-@task()  # (track_started=True)
+@task(max_retries=3)  # (track_started=True)
 def start_generating(oid, url):
+    # NOTE: default_retry_delay=3 * 60 - retry in 3 minutes.
 
     startTimer = time.time()
     start_generating.update_state(
         state='STARTED',
         meta={'startat': startTimer})
-
-    # NOTE: delay before generation start
-    # to avoid KeyError exception on creating object
-    time.sleep(15)
 
     params = dict(oid=oid)
     res = jsonRpcRequest(
@@ -51,7 +48,16 @@ def start_generating(oid, url):
         params=json.dumps(params),
         jsonRPCUrl=url)
 
+    if not res:
+        msg = 'ERROR: no response for generatePreview'
+        message(text=msg, type='warn')
+        return res['msg']
+
     if res['err']:
+        if "problem with getting object" in res['err']:
+            # NOTE: countdown=60 - custom retry in 1 minute
+            return start_generating.retry(exc=res['err'], countdown=30)
+
         msg = "Generation NOT finished, error: %s" % res['err']
         message(text=msg, type='critical')
 
@@ -73,7 +79,7 @@ def message(text=None, type='info'):
     if type == 'critical':
         logging.critical(text)
 
-    print "%s %s: %s" % (datetime.now(), type, text)
+    # print "%s %s: %s" % (datetime.now(), type, text)
 
 
 def prepareUrl(url=None):

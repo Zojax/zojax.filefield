@@ -80,7 +80,7 @@ class File(Persistent):
             fp.close()
             return data
         except POSKeyError:
-            print "Found damaged FileField: %s" % (self.filename)
+            print "line 83: Found damaged FileField: %s" % (self.filename)
             return False
 
     @getproperty
@@ -141,7 +141,7 @@ class File(Persistent):
                 self.modified = zope.datetime.parseDatetimetz(str(datetime.now()))
             return self._blob.open(mode)
         except POSKeyError:
-            print "Found damaged FileField: %s" % (self.filename)
+            print "line 144: Found damaged FileField: %s" % (self.filename)
             return False
 
 
@@ -305,7 +305,7 @@ class Image(File):
             fp.close()
             return data
         except POSKeyError:
-            print "Found damaged Image %s" % (self.filename)
+            print "line 308: Found damaged Image %s" % (self.filename)
             return False
 
     def scale(self, width, height, quality=88):

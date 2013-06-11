@@ -41,19 +41,26 @@ class FileFieldAPI(publisher.MethodPublisher):
             result['err'] = "not oid"
             return result
 
-        # NOTE: get object from oid
-        object = getUtility(IPreviewsCatalog).getObject(int(oid))
+        try:
+            # NOTE: get object from oid
+            object = getUtility(IPreviewsCatalog).getObject(int(oid))
+        except Exception, e:
+            result['err'] = "problem with getting object - %s" % e
+            return result
 
         if not object:
             result['err'] = "not object"
             return result
 
-        # NOTE: starts generating preview for this object
-        newsize = object.generateFunction()
-        if newsize:
-            result['msg'] = newsize
-            # NOTE: write newsize to object
-            object.previewSize = newsize
-            notify(ObjectModifiedEvent(object))
+        try:
+            # NOTE: starts generating preview for this object
+            newsize = object.generateFunction()
+            if newsize:
+                result['msg'] = newsize
+                # NOTE: write newsize to object
+                object.previewSize = newsize
+                notify(ObjectModifiedEvent(object))
+        except Exception, e:
+            result['err'] = "problem with generating preview - %s" % e
 
         return result
