@@ -16,9 +16,10 @@
 $Id$
 """
 
+import httplib
+import socket
 import time
 import urllib2
-import httplib
 
 from celery.task import task
 #from datetime import datetime
@@ -31,6 +32,10 @@ except ImportError:
 
 import logging
 logger = logging.getLogger('zojax.filefield.tasks')
+
+# timeout in seconds
+timeout = 1800
+socket.setdefaulttimeout(timeout)
 
 
 @task(max_retries=3)  # (track_started=True)
@@ -51,7 +56,7 @@ def start_generating(oid, url):
     if not res:
         msg = 'ERROR: no response for generatePreview'
         message(text=msg, type='warn')
-        return res['msg']
+        return msg
 
     if res['err']:
         if "problem with getting object" in res['err']:
