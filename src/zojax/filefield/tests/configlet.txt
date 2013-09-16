@@ -19,7 +19,7 @@ Configlet
     >>> from zojax.catalog.defaultindexes import typeIndex
 
     >>> from zojax.content.type.interfaces import IContentType
- 
+
     >>> from zojax.filefield.interfaces import IPreviewsCatalog
     >>> from zojax.filefield.configlet import PreviewsCatalog
 
@@ -107,7 +107,7 @@ Configlet
     </html>
 
     No ObjectModifiedEvent - no preview, guys! (by default)
-    
+
     >>> previews_catalog.generateMethod == 'upload'
     True
     >>> event.notify(ObjectModifiedEvent(root['mycontent'].data))
@@ -137,14 +137,17 @@ Configlet
     [u'content.mycontent']
 
     Let's check (we having preview, don't forget)
+    NOTE: if there is no <input> and there is <...style="color:Green"> it indicates that
+          preview was successfully generated for this object.
 
     >>> admin.getLink('Manage Content Objects').click()
     >>> print admin.contents
     <html>
     ...
-      <div>
-        There is no any content objects without previews.
-      </div>
+              <td><a href="http://localhost/mycontent" style="color:Green"></a>
+              </td>
+              <td style="color:Green">
+                test.txt - text/plain<br />
     ...
     </html>
 
@@ -212,14 +215,16 @@ Configlet
               <td>
                 <input type="checkbox" name="form.checkbox.id:list" value="..." />
               </td>
-              <td><a href="http://localhost/mycontent"></a>
+              <td><a href="http://localhost/mycontent" style="color:Red"></a>
               </td>
-              <td>
+              <td style="color:Red">
                 test.txt - text/plain<br />
     ...
     </html>
 
     Build selected
+    NOTE: if there is no <input> and there is <...style="color:Green"> it indicates that
+          preview was successfully generated for this object.
 
     >>> admin.getControl(name="form.checkbox.id:list").value=['true']
     >>> admin.getControl(name="form.button.build_selected").click()
@@ -227,9 +232,10 @@ Configlet
     <html>
     ...<div class="statusMessage">Previews for selected files has been builded.</div>
     ...
-      <div>
-        There is no any content objects without previews.
-      </div>
+              <td><a href="http://localhost/mycontent" style="color:Green"></a>
+              </td>
+              <td style="color:Green">
+                test.txt - text/plain<br />
     ...
     </html>
 
@@ -247,9 +253,9 @@ Configlet
               <td>
                 <input type="checkbox" name="form.checkbox.id:list" value="..." />
               </td>
-              <td><a href="http://localhost/mycontent"></a>
+              <td><a href="http://localhost/mycontent" style="color:Red"></a>
               </td>
-              <td>
+              <td style="color:Red">
                 test.txt - text/plain<br />
     ...
     </html>
@@ -261,9 +267,10 @@ Configlet
     <html>
     ...<div class="statusMessage">Previews catalog has been builded.</div>
     ...
-      <div>
-        There is no any content objects without previews.
-      </div>
+              <td><a href="http://localhost/mycontent" style="color:Green"></a>
+              </td>
+              <td style="color:Green">
+                test.txt - text/plain<br />
     ...
     </html>
 

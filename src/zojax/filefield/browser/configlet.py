@@ -107,8 +107,8 @@ class PreviewsCatalogBuildView(WizardStep):
         context = removeAllProxies(self.context)
 
         filefield_objects = self.catalog\
-            .searchResults(type={'any_of': self.f2c_mapping.keys()},
-                           sort_on='modified', sort_order='reverse')
+            .searchResults(type={'any_of': self.f2c_mapping.keys()}) #,
+                           #sort_on='modified', sort_order='reverse')
 
         if 'form.button.build' in request:
             for obj in filefield_objects:
