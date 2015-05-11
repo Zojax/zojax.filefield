@@ -15,7 +15,10 @@
 
 $Id$
 """
-import BTrees, transaction, logging
+import BTrees
+import logging
+import sys
+import transaction
 
 from ZODB.blob import Blob
 from ZODB.interfaces import BlobError
@@ -23,7 +26,7 @@ from persistent import Persistent
 from persistent.interfaces import IPersistent
 from rwproperty import setproperty, getproperty
 
-from zope import interface, event
+from zope import interface  # , event
 from zope.component import getUtility
 from zope.keyreference.interfaces import NotYet
 from zope.keyreference.persistent import KeyReferenceToPersistent
@@ -34,6 +37,7 @@ from zojax.converter.interfaces import ConverterException
 from interfaces import IPreviewsCatalog, IPreviewRecord, IFile
 
 logger = logging.getLogger('zojax.filefield (configlet)')
+
 
 class PreviewsCatalog(object):
     interface.implements(IPreviewsCatalog)
@@ -66,7 +70,7 @@ class PreviewsCatalog(object):
         if object.mimeType:
             self.records[oid] = preview
 
-        #event.notify(PreviewRecordAddedEvent(object, preview))
+        # event.notify(PreviewRecordAddedEvent(object, preview))
 
     def remove(self, object=None):
         if object is None or not IFile.providedBy(object):
@@ -78,7 +82,7 @@ class PreviewsCatalog(object):
 
         record = self.records.get(oid, None)
         if record:
-            #event.notify(PreviewRecordRemovedEvent(object, record))
+            # event.notify(PreviewRecordRemovedEvent(object, record))
             del self.records[oid]
 
     def check(self, object=None, allow_auto_generate=True):
@@ -96,7 +100,8 @@ class PreviewsCatalog(object):
             if allow_auto_generate and ('check' in self.generateMethod):
                 self.add(object)
                 # NOTE: there is no oid in self.records if file is missing
-                if self.records.has_key(oid) and self.records[oid].previewSize > 0:
+                if self.records.has_key(oid) and \
+                   self.records[oid].previewSize > 0:
                     return True
 
             return False
@@ -114,7 +119,7 @@ class PreviewsCatalog(object):
             self.add(object)
 
         if oid in self.records:
-            # NOTE: records[oid]: parent, previewSize, _previewBlob, previewData
+            # NOTE: records[oid]:parent, previewSize, _previewBlob, previewData
             return self.records[oid]
 
     def getPreviewSize(self, object=None):
@@ -196,29 +201,40 @@ class PreviewRecord(Persistent):
         except BlobError:
             if n < 2:
                 transaction.commit()
-                return self.openPreviewDetached(n+1)
+                return self.openPreviewDetached(n + 1)
 
     def generatePreview(self):
         MAX_VALUE = getUtility(IPreviewsCatalog).maxValue * 1024 * 1024
         size = 0
 
-        if self.parent.size < MAX_VALUE:
+        if self.parent.size < MAX_VALUE and not self.parent.disablePreview:
+            logger.info(
+                "Start generating preview for: %s" % self.parent.filename)
             fp = self.openPreview('w')
             ff = self.parent.open()
             try:
-                fp.write(api.convert(ff, 'application/x-shockwave-flash', self.parent.mimeType, filename=self.parent.filename))
+                fp.write(api.convert(
+                    ff, 'application/x-shockwave-flash', self.parent.mimeType,
+                    filename=self.parent.filename))
                 size = int(fp.tell())
-            except ConverterException, e:
+            except (ConverterException, OSError), e:
                 logger.warning(
-                    'Error generating preview for %s: %s', self.parent.filename, e)
+                    'Error generating preview for %s: %s',
+                    self.parent.filename, e)
+            except:
+                logger.warning(
+                    '2 - Error generating preview for %s: %s',
+                    self.parent.filename, sys.exc_info()[0])
             finally:
                 ff.close()
                 fp.close()
+            logger.info(
+                "Finish generating preview for: %s" % self.parent.filename)
 
         self.previewSize = size
         return size
 
 
-#@component.adapter(IPreviewDataAware, IIntIdRemovedEvent)
-#def objectRemovedHandler(object, ev):
-#    removeAllProxies(getUtility(IPreviewsCatalog)).remove(object)
+# @component.adapter(IPreviewDataAware, IIntIdRemovedEvent)
+# def objectRemovedHandler(object, ev):
+#     removeAllProxies(getUtility(IPreviewsCatalog)).remove(object)

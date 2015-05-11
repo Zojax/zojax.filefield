@@ -10,7 +10,7 @@ File Widget
   >>> from z3c.form import interfaces
   >>> from z3c.form.testing import TestRequest
   >>> request = TestRequest()
-  
+
   >>> class IFileContent(interface.Interface):
   ...     data = FileField(
   ...         title = u'Date',
@@ -47,8 +47,14 @@ We also need to register the template for the widget:
 
   >>> widget.update()
   >>> print widget.render()
+  <BLANKLINE>
+  <BLANKLINE>
+  <BLANKLINE>
   <input type="file" id="widget.id" name="widget.name"
          class="file-widget filefield-field" />
+  ...
+    <label for="widget.name_disable_preview" title="">Disable Preview generation?</label>
+  ...
 
   >>> import os.path
   >>> filePath = os.path.join(os.path.split(__file__)[0], 'image.gif')
@@ -82,8 +88,14 @@ Unload option is not available for add form and for required field
 
   >>> widget.update()
   >>> print widget.render()
+  <BLANKLINE>
+  <BLANKLINE>
+  <BLANKLINE>
   <input type="file" id="widget.id" name="widget.name"
          class="file-widget required filefield-field" />
+  ...
+    <label for="widget.name_disable_preview" title="">Disable Preview generation?</label>
+  ...
 
 
 ============

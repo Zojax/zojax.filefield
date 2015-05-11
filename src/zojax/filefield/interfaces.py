@@ -112,7 +112,7 @@ class IFile(interface.Interface):
 
     modified = interface.Attribute('Modified time')
 
-
+    disablePreview = interface.Attribute('disablePreview')
 
     def open(mode='r'):
         """ Open file and return the file descriptor """
@@ -171,6 +171,8 @@ class IFileData(interface.Interface):
     mimeType = interface.Attribute('MimeType')
 
     filename = interface.Attribute('Filename')
+
+    disablePreview = interface.Attribute('disablePreview')
 
     def __len__():
         """ data length """

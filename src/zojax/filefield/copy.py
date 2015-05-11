@@ -29,6 +29,7 @@ def fileCopyFactory(original):
         file = File()
         file.filename = original.filename
         file.mimeType = original.mimeType
+        file.disablePreview = original.disablePreview
 
         def afterCopy(translate):
             file.data = original.data

@@ -11,26 +11,32 @@
 # FOR A PARTICULAR PURPOSE.
 #
 ##############################################################################
-from zope.component.interfaces import ComponentLookupError
+
 """
 
 $Id$
 """
 from types import FileType
+
 from zope import schema, component, interface
-from zope.component import getMultiAdapter, queryMultiAdapter
+from zope.component import getMultiAdapter  # , queryMultiAdapter
+from zope.component.interfaces import ComponentLookupError
 from zope.publisher.browser import FileUpload
 from zope.security.proxy import removeSecurityProxy
-from zope.app.pagetemplate import ViewPageTemplateFile
+# from zope.app.pagetemplate import ViewPageTemplateFile
 
 from z3c.form.browser import file
 from z3c.form.widget import FieldWidget
 from z3c.form import interfaces, converter, validator, datamanager
 
-from data import fileDataClear, fileDataNoValue, FileData
+from data import fileDataClear, FileData  # , fileDataNoValue
 from interfaces import _, IBlobDataField, IFileWidget
 from interfaces import IFile, IFileData
 from interfaces import IFileDataClear, IFileDataNoValue
+
+
+def str2bool(val):
+    return val.lower() in ("true", "yes", "1")
 
 
 @component.adapter(IBlobDataField, interface.Interface)
@@ -46,6 +52,7 @@ class FileWidget(file.FileWidget):
     klass = 'file-widget'
 
     unload = False
+    disable_preview = False
 
     def update(self):
         field = self.field
@@ -66,12 +73,12 @@ class FileWidget(file.FileWidget):
             self.canUnload = False
 
         if self.canUnload:
-            name = '%s_unload'%self.name
+            name = '%s_unload' % self.name
             self.unload = schema.Bool(
-                __name__ = name,
-                title = _(u"Remove"),
-                default = False,
-                required = False)
+                __name__=name,
+                title=_(u"Remove"),
+                default=False,
+                required=False)
 
             setattr(self, name, False)
 
@@ -79,14 +86,46 @@ class FileWidget(file.FileWidget):
             self.unload_widget = getMultiAdapter(
                 (self.unload, self.request), interfaces.IFieldWidget)
             self.unload_widget.context = self
-            interface.alsoProvides(self.unload_widget, interfaces.IContextAware)
+            interface.alsoProvides(
+                self.unload_widget, interfaces.IContextAware)
             self.unload_widget.update()
+
+        # NOTE: disable preview generation widget
+        name = '%s_disable_preview' % self.name
+        self.disable_preview = schema.Bool(
+            __name__=name,
+            title=_(u"Disable Preview generation?"),
+            default=False,
+            required=False)
+        # disablePreview = getattr(
+        #     removeSecurityProxy(self.context), 'disablePreview', False)
+        try:
+            value = getMultiAdapter(
+                (removeSecurityProxy(self.context), field),
+                interfaces.IDataManager).query()
+            setattr(self, name, value.disablePreview)
+        except:  # (ComponentLookupError, AttributeError):
+            setattr(self, name, False)
+
+        self.disable_preview.context = self
+        self.disable_preview_widget = getMultiAdapter(
+            (self.disable_preview, self.request), interfaces.IFieldWidget)
+        self.disable_preview_widget.context = self
+        interface.alsoProvides(
+            self.disable_preview_widget, interfaces.IContextAware)
+        self.disable_preview_widget.update()
 
         super(FileWidget, self).update()
 
     def extract(self, default=interfaces.NOVALUE):
-        fileUpload = self.request.get(self.name, default)
+        context = self.context
+        if hasattr(context, 'data') and IFile.providedBy(context.data):
+            # NOTE: change disablePreview, even if no new file is uploaded
+            file_data = removeSecurityProxy(context).data
+            file_data.disablePreview = str2bool(
+                self.disable_preview_widget.value[0])
 
+        fileUpload = self.request.get(self.name, default)
         if self.canUnload:
             unload = self.unload_widget.extract(default)
 
@@ -125,7 +164,7 @@ class FileFieldDataManager(datamanager.AttributeField):
                 IFileData.providedBy(value) or
                 IFileDataClear.providedBy(value)):
             return
-        
+
         # get the right adapter or context
         context = removeSecurityProxy(self.context)
         if self.field.interface is not None:
@@ -139,22 +178,25 @@ class FileWidgetDataConverter(converter.BaseDataConverter):
     component.adapts(IBlobDataField, IFileWidget)
 
     def toFieldValue(self, value):
-        if IFileData.providedBy(value) or \
-               IFileDataClear.providedBy(value) or \
-               IFileDataNoValue.providedBy(value) or \
-               IFile:
+        value.disablePreview = False
+        if getattr(self.widget, 'disable_preview', None) is not None:
+            if 'true' in self.widget.disable_preview_widget.value:
+                value.disablePreview = True
+
+        if IFileData.providedBy(value) or IFileDataClear.providedBy(value) or \
+           IFileDataNoValue.providedBy(value) or IFile:
             return value
-        
+
         if value is None or value == '':
             # When no new file is uploaded, send a signal that we do not want
             # to do anything special.
             return interfaces.NOT_CHANGED
 
         return FileData(value)
-    
+
     def toWidgetValue(self, value):
         """See interfaces.IDataConverter"""
-        #raise Exception(value)
+        # raise Exception(value)
         return value
 
 

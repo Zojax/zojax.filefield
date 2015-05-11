@@ -11,41 +11,48 @@
 # FOR A PARTICULAR PURPOSE.
 #
 ##############################################################################
-from zope.size import byteDisplay
-from zope.size.interfaces import ISized
-from ZODB.interfaces import BlobError
-from ZODB.POSException import POSKeyError
+
 """
 
 $Id$
 """
-import pytz, os.path, time, os, stat, struct, rfc822, md5, random, shlex, string, \
-        subprocess, tempfile, logging
-
+import logging
+import md5
+import os
+import os.path
+import rfc822
+import struct
 import transaction
-from ZODB.blob import Blob
+# import pytz, random, subprocess, tempfile, stat, string, shlex, time
+
 from datetime import datetime
 from StringIO import StringIO
 from persistent import Persistent
 from rwproperty import setproperty, getproperty
 
+from ZODB.blob import Blob
+from ZODB.interfaces import BlobError
+from ZODB.POSException import POSKeyError
+
 import zope.datetime
 from zope import interface, component
-from zope.proxy import removeAllProxies
 from zope.component import getMultiAdapter, getUtility
 from zope.cachedescriptors.property import Lazy
+from zope.lifecycleevent.interfaces import IObjectModifiedEvent
+from zope.proxy import removeAllProxies
 from zope.publisher.interfaces.http import IResult
 from zope.publisher.interfaces import IPublishTraverse
-from zope.lifecycleevent.interfaces import IObjectModifiedEvent
+from zope.size import byteDisplay
+from zope.size.interfaces import ISized
 
-from zojax.converter import api
-from zojax.resourcepackage import library
-from zojax.converter.interfaces import ConverterException
 from zojax.content.type.interfaces import IDraftedContent
+from zojax.converter import api
+# from zojax.converter.interfaces import ConverterException
+from zojax.resourcepackage import library
 
 from interfaces import IFile, IImage, IFileData, IPreviewsCatalog
-from interfaces import IFileDataClear, IFileDataNoValue, OO_CONVERTER_EXECUTABLE, \
-OO_CONVERTED_TYPES, PREVIEWED_TYPES
+from interfaces import IFileDataClear, IFileDataNoValue
+# OO_CONVERTER_EXECUTABLE, PREVIEWED_TYPES, OO_CONVERTED_TYPES
 
 
 logger = logging.getLogger('zojax.filefield')
@@ -58,6 +65,7 @@ class File(Persistent):
     filename = u'file'
     mimeType = u''
     modified = None
+    disablePreview = False
 
     def __init__(self):
         self._blob = Blob()
@@ -99,7 +107,7 @@ class File(Persistent):
             if not reader:
                 return 0
             try:
-                reader.seek(0,2)
+                reader.seek(0, 2)
                 size = int(reader.tell())
             finally:
                 reader.close()
@@ -129,6 +137,7 @@ class File(Persistent):
         self.filename = u''
         self.mimeType = u''
         self.data = u''
+        self.disablePreview = u''
 
         # NOTE: remove record from previewsCatalog
         getUtility(IPreviewsCatalog).remove(self)
@@ -138,12 +147,12 @@ class File(Persistent):
             if 'w' in mode:
                 if 'size' in self.__dict__:
                     del self.__dict__['size']
-                self.modified = zope.datetime.parseDatetimetz(str(datetime.now()))
+                self.modified = zope.datetime.parseDatetimetz(
+                    str(datetime.now()))
             return self._blob.open(mode)
         except POSKeyError:
             print "Found damaged FileField: %s" % (self.filename)
             return False
-
 
     def openPreview(self, mode="r"):
         """ returns openPreview for preview
@@ -157,7 +166,7 @@ class File(Persistent):
         except BlobError:
             if n < 2:
                 transaction.commit()
-                return self.openDetached(n+1)
+                return self.openDetached(n + 1)
 
     def openPreviewDetached(self):
         """ returns openPreviewDetached for preview
@@ -183,8 +192,10 @@ class File(Persistent):
 
         if header is not None:
             header = header.split(';')[0]
-            try:    mod_since=long(zope.datetime.time(header))
-            except: mod_since=None
+            try:
+                mod_since = long(zope.datetime.time(header))
+            except:
+                mod_since = None
             if mod_since is not None:
                 if lmt <= mod_since:
                     response.setStatus(304)
@@ -195,7 +206,7 @@ class File(Persistent):
             filename = self.filename
 
         response.setHeader(
-            'Content-Disposition','%s; filename="%s"'%(
+            'Content-Disposition', '%s; filename="%s"' % (
                 contentDisposition, filename.encode('utf-8')))
 
         if not self.size:
@@ -235,8 +246,10 @@ class File(Persistent):
 
         if header is not None:
             header = header.split(';')[0]
-            try:    mod_since=long(zope.datetime.time(header))
-            except: mod_since=None
+            try:
+                mod_since = long(zope.datetime.time(header))
+            except:
+                mod_since = None
             if mod_since is not None:
                 if lmt <= mod_since:
                     response.setStatus(304)
@@ -247,7 +260,7 @@ class File(Persistent):
             filename = self.filename
 
         response.setHeader(
-            'Content-Disposition','%s; filename="%s"'%(
+            'Content-Disposition', '%s; filename="%s"' % (
                 contentDisposition, filename.encode('utf-8')))
 
         if not previewSize:
@@ -278,6 +291,7 @@ class File(Persistent):
         new.data = self.data
         new.filename = self.filename
         new.mimeType = self.mimeType
+        new.disablePreview = self.disablePreview
         new.generatePreview()
         return new
 
@@ -353,7 +367,7 @@ class FileData(object):
     """ widget data """
     interface.implements(IFileData)
 
-    def __init__(self, file=u'', filename=None, mimeType=None):
+    def __init__(self, file=u'', filename=None, mimeType=None, disablePreview=None):
         if file is None:
             file = u''
 
@@ -369,13 +383,18 @@ class FileData(object):
 
         self.filename = filename
 
-        file.seek(0,2)
+        file.seek(0, 2)
         self.size = int(file.tell())
 
         if mimeType is None:
             mimeType = api.guessMimetype(file, self.filename)[0]
 
         self.mimeType = mimeType
+
+        if disablePreview is None:
+            disablePreview = False
+
+        self.disablePreview = disablePreview
 
     @property
     def data(self):
@@ -493,7 +512,7 @@ def getImageSize(fp):
     # Bytes 0-7 are below, 4-byte chunk length, then 'IHDR'
     # and finally the 4-byte width, height
     if ((size >= 24) and data.startswith('\211PNG\r\n\032\n')
-        and (data[12:16] == 'IHDR')):
+       and (data[12:16] == 'IHDR')):
         w, h = struct.unpack(">LL", data[16:24])
         width = int(w)
         height = int(h)
@@ -512,14 +531,16 @@ def getImageSize(fp):
         w = -1
         h = -1
         while (b and ord(b) != 0xDA):
-            while (ord(b) != 0xFF): b = fp.read(1)
-            while (ord(b) == 0xFF): b = fp.read(1)
+            while (ord(b) != 0xFF):
+                b = fp.read(1)
+            while (ord(b) == 0xFF):
+                b = fp.read(1)
             if (ord(b) >= 0xC0 and ord(b) <= 0xC3):
                 fp.read(3)
                 h, w = struct.unpack(">HH", fp.read(4))
                 break
             else:
-                fp.read(int(struct.unpack(">H", fp.read(2))[0])-2)
+                fp.read(int(struct.unpack(">H", fp.read(2))[0]) - 2)
             b = fp.read(1)
         width = int(w)
         height = int(h)

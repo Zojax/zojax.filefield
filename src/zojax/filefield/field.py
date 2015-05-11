@@ -21,10 +21,10 @@ from zope import interface, schema
 from zope.event import notify
 from zope.schema.interfaces import RequiredMissing, WrongType
 from zope.security.proxy import removeSecurityProxy
-from zope.publisher.browser import FileUpload
+# from zope.publisher.browser import FileUpload
 from zope.lifecycleevent import ObjectModifiedEvent
 
-from data import File, Image, FileData, getImageSize, fileDataNoValue
+from data import File, Image, FileData, getImageSize  # , fileDataNoValue
 
 from interfaces import NotAllowedFileType, ImageDimensionExceeded
 
@@ -81,6 +81,7 @@ class FileField(schema.MinMaxLen, schema.Field):
 
         if IFile.providedBy(value):
             _setattr(object, self.__name__, value)
+
         elif IFileData.providedBy(value):
             data = _getattr(object, self.__name__, None)
             if not IFile.providedBy(data):
@@ -88,12 +89,14 @@ class FileField(schema.MinMaxLen, schema.Field):
                 data.data = value.data
                 data.mimeType = value.mimeType
                 data.filename = value.filename
+                data.disablePreview = value.disablePreview
                 _setattr(object, self.__name__, data)
             else:
                 data = removeSecurityProxy(data)
                 data.data = value.data
                 data.mimeType = value.mimeType
                 data.filename = value.filename
+                data.disablePreview = value.disablePreview
                 _setattr(object, self.__name__, data)
                 notify(ObjectModifiedEvent(data))
 
@@ -103,16 +106,18 @@ class FileField(schema.MinMaxLen, schema.Field):
                 data.clear()
             else:
                 _setattr(object, self.__name__, File())
+
         elif IFileDataNoValue.providedBy(value):
             pass
         else:
             self.set(object, FileData(value), _getattr, _setattr)
 
     def _validate(self, value):
-        if (IFileDataNoValue.providedBy(value) or not value)  and self.required:
+        if (IFileDataNoValue.providedBy(value) or not value) and self.required:
             raise RequiredMissing()
 
-        if IFileDataClear.providedBy(value) or IFileDataNoValue.providedBy(value):
+        if IFileDataClear.providedBy(value) or \
+           IFileDataNoValue.providedBy(value):
             return
 
         super(FileField, self)._validate(value)
@@ -183,8 +188,8 @@ class ImageField(schema.MinMaxLen, schema.Field):
                 data.filename = value.filename
                 _setattr(object, self.__name__, data)
 
-            if self.scale and \
-                    (self.maxWidth < data.width or self.maxHeight < data.height):
+            if self.scale and (self.maxWidth < data.width or
+               self.maxHeight < data.height):
                 data.scale(self.maxWidth, self.maxHeight)
 
         elif IFileDataClear.providedBy(value):
@@ -225,7 +230,8 @@ class ImageField(schema.MinMaxLen, schema.Field):
                 raise ImageDimensionExceeded(width, ('width', self.maxWidth))
 
             if self.maxHeight > 0 and height > self.maxHeight:
-                raise ImageDimensionExceeded(height, ('height', self.maxHeight))
+                raise ImageDimensionExceeded(
+                    height, ('height', self.maxHeight))
 
 
 class FileFieldProperty(object):
