@@ -114,6 +114,8 @@ class IFile(interface.Interface):
 
     disablePreview = interface.Attribute('disablePreview')
 
+    disablePrint = interface.Attribute('disablePrint')
+
     def open(mode='r'):
         """ Open file and return the file descriptor """
 
@@ -173,6 +175,8 @@ class IFileData(interface.Interface):
     filename = interface.Attribute('Filename')
 
     disablePreview = interface.Attribute('disablePreview')
+
+    disablePrint = interface.Attribute('disablePrint')
 
     def __len__():
         """ data length """

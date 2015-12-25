@@ -30,6 +30,7 @@ def fileCopyFactory(original):
         file.filename = original.filename
         file.mimeType = original.mimeType
         file.disablePreview = original.disablePreview
+        file.disablePrint = original.disablePrint
 
         def afterCopy(translate):
             file.data = original.data

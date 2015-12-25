@@ -66,6 +66,7 @@ class File(Persistent):
     mimeType = u''
     modified = None
     disablePreview = False
+    disablePrint = False
 
     def __init__(self):
         self._blob = Blob()
@@ -138,6 +139,7 @@ class File(Persistent):
         self.mimeType = u''
         self.data = u''
         self.disablePreview = u''
+        self.disablePrint = u''
 
         # NOTE: remove record from previewsCatalog
         getUtility(IPreviewsCatalog).remove(self)
@@ -292,6 +294,7 @@ class File(Persistent):
         new.filename = self.filename
         new.mimeType = self.mimeType
         new.disablePreview = self.disablePreview
+        new.disablePrint = self.disablePrint
         new.generatePreview()
         return new
 
@@ -367,7 +370,7 @@ class FileData(object):
     """ widget data """
     interface.implements(IFileData)
 
-    def __init__(self, file=u'', filename=None, mimeType=None, disablePreview=None):
+    def __init__(self, file=u'', filename=None, mimeType=None, disablePreview=None, disablePrint=None):
         if file is None:
             file = u''
 
@@ -395,6 +398,11 @@ class FileData(object):
             disablePreview = False
 
         self.disablePreview = disablePreview
+
+        if disablePrint is None:
+            disablePrint = False
+
+        self.disablePrint = disablePrint
 
     @property
     def data(self):

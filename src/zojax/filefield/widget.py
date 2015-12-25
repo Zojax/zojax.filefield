@@ -53,6 +53,7 @@ class FileWidget(file.FileWidget):
 
     unload = False
     disable_preview = False
+    disable_print = False
 
     def update(self):
         field = self.field
@@ -115,6 +116,29 @@ class FileWidget(file.FileWidget):
             self.disable_preview_widget, interfaces.IContextAware)
         self.disable_preview_widget.update()
 
+        # NOTE: disable print button widget
+        name = '%s_disable_print' % self.name
+        self.disable_print = schema.Bool(
+            __name__=name,
+            title=_(u"Disable Print button?"),
+            default=False,
+            required=False)
+        try:
+            value = getMultiAdapter(
+                (removeSecurityProxy(self.context), field),
+                interfaces.IDataManager).query()
+            setattr(self, name, value.disablePrint)
+        except:
+            setattr(self, name, False)
+
+        self.disable_print.context = self
+        self.disable_print_widget = getMultiAdapter(
+            (self.disable_print, self.request), interfaces.IFieldWidget)
+        self.disable_print_widget.context = self
+        interface.alsoProvides(
+            self.disable_print_widget, interfaces.IContextAware)
+        self.disable_print_widget.update()
+
         super(FileWidget, self).update()
 
     def extract(self, default=interfaces.NOVALUE):
@@ -124,6 +148,8 @@ class FileWidget(file.FileWidget):
             file_data = removeSecurityProxy(context).data
             file_data.disablePreview = str2bool(
                 self.disable_preview_widget.value[0])
+            file_data.disablePrint = str2bool(
+                self.disable_print_widget.value[0])
 
         fileUpload = self.request.get(self.name, default)
         if self.canUnload:
@@ -179,9 +205,13 @@ class FileWidgetDataConverter(converter.BaseDataConverter):
 
     def toFieldValue(self, value):
         value.disablePreview = False
+        value.disablePrint = False
         if getattr(self.widget, 'disable_preview', None) is not None:
             if 'true' in self.widget.disable_preview_widget.value:
                 value.disablePreview = True
+        if getattr(self.widget, 'disable_print', None) is not None:
+            if 'true' in self.widget.disable_print_widget.value:
+                value.disablePrint = True
 
         if IFileData.providedBy(value) or IFileDataClear.providedBy(value) or \
            IFileDataNoValue.providedBy(value) or IFile:

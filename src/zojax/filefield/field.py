@@ -90,6 +90,7 @@ class FileField(schema.MinMaxLen, schema.Field):
                 data.mimeType = value.mimeType
                 data.filename = value.filename
                 data.disablePreview = value.disablePreview
+                data.disablePrint = value.disablePrint
                 _setattr(object, self.__name__, data)
             else:
                 data = removeSecurityProxy(data)
@@ -97,6 +98,7 @@ class FileField(schema.MinMaxLen, schema.Field):
                 data.mimeType = value.mimeType
                 data.filename = value.filename
                 data.disablePreview = value.disablePreview
+                data.disablePrint = value.disablePrint
                 _setattr(object, self.__name__, data)
                 notify(ObjectModifiedEvent(data))
 
