@@ -37,6 +37,8 @@ from zojax.converter.interfaces import ConverterException
 from interfaces import IPreviewsCatalog, IPreviewRecord, IFile
 
 logger = logging.getLogger('zojax.filefield (configlet)')
+exclude_types = [
+    'application/pdf', 'image/gif', 'image/jpeg', 'image/png' 'text/html']
 
 
 class PreviewsCatalog(object):
@@ -55,6 +57,10 @@ class PreviewsCatalog(object):
     def add(self, object=None):
 
         if object is None or not IFile.providedBy(object):
+            return
+
+        # NOTE: don't generate previews for certain content types
+        if object.mimeType in exclude_types:
             return
 
         oid = self._getOid(object)
@@ -94,6 +100,10 @@ class PreviewsCatalog(object):
         if oid is None:
             return
 
+        # NOTE: workaround for excluded types
+        if object.mimeType in exclude_types:
+            return True
+
         if oid in self.records and self.records[oid].previewSize > 0:
             return True
         else:
@@ -115,6 +125,10 @@ class PreviewsCatalog(object):
         if oid is None:
             return
 
+        # NOTE: workaround for excluded types
+        if object.mimeType in exclude_types:
+            return object.open()
+
         if 'always' in self.generateMethod:
             self.add(object)
 
@@ -130,6 +144,10 @@ class PreviewsCatalog(object):
         if oid is None:
             return
 
+        # NOTE: workaround for excluded types
+        if object.mimeType in exclude_types and hasattr(object, 'size'):
+            return object.size
+
         if oid in self.records:
             return self.records[oid].previewSize
 
@@ -143,13 +161,13 @@ class PreviewsCatalog(object):
 
         try:
             return hash(KeyReferenceToPersistent(object))
-            #oid = hash(KeyReferenceToPersistent(object))
+            # oid = hash(KeyReferenceToPersistent(object))
 
-            ## negative hash means file was not uploaded
-            #if oid <= 0:
-            #    return
+            # negative hash means file was not uploaded
+            # if oid <= 0:
+            #     return
 
-            #return oid
+            # return oid
         except NotYet:
             return
 
@@ -177,7 +195,7 @@ class PreviewRecord(Persistent):
         else:
             reader = self.openPreview()
             try:
-                reader.seek(0,2)
+                reader.seek(0, 2)
                 size = int(reader.tell())
             finally:
                 reader.close()
@@ -214,7 +232,7 @@ class PreviewRecord(Persistent):
             ff = self.parent.open()
             try:
                 fp.write(api.convert(
-                    ff, 'application/x-shockwave-flash', self.parent.mimeType,
+                    ff, 'application/pdf', self.parent.mimeType,
                     filename=self.parent.filename))
                 size = int(fp.tell())
             except (ConverterException, OSError), e:

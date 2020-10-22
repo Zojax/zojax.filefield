@@ -50,6 +50,7 @@ from zojax.converter import api
 # from zojax.converter.interfaces import ConverterException
 from zojax.resourcepackage import library
 
+from configlet import exclude_types
 from interfaces import IFile, IImage, IFileData, IPreviewsCatalog
 from interfaces import IFileDataClear, IFileDataNoValue
 # OO_CONVERTER_EXECUTABLE, PREVIEWED_TYPES, OO_CONVERTED_TYPES
@@ -159,6 +160,11 @@ class File(Persistent):
     def openPreview(self, mode="r"):
         """ returns openPreview for preview
         """
+
+        # NOTE: workaround for excluded types
+        if self.mimeType in exclude_types:
+            return self.open()
+
         preview = getUtility(IPreviewsCatalog).getPreview(self)
         return preview.openPreview(mode)
 
@@ -173,6 +179,11 @@ class File(Persistent):
     def openPreviewDetached(self):
         """ returns openPreviewDetached for preview
         """
+
+        # NOTE: workaround for excluded types
+        if self.mimeType in exclude_types:
+            return self.openDetached()
+
         preview = getUtility(IPreviewsCatalog).getPreview(self)
         return preview.openPreviewDetached()
 
@@ -236,7 +247,7 @@ class File(Persistent):
 
         response = request.response
 
-        response.setHeader('Content-Type', 'application/x-shockwave-flash')
+        response.setHeader('Content-Type', 'application/pdf')
 
         response.setHeader('Content-Length', previewSize)
 

@@ -1,61 +1,30 @@
-<script type="text/javascript">
-    if(window.addEventListener)window.addEventListener('DOMMouseScroll',handleWheel,false);window.onmousewheel=document.onmousewheel=handleWheel;if(window.attachEvent)window.attachEvent("onmousewheel",handleWheel);function handleWheel(event){try{if(!window.document.FlexPaperViewer.hasFocus()){return true}window.document.FlexPaperViewer.setViewerFocus(true);window.document.FlexPaperViewer.focus();if(navigator.appName=="Netscape"){if(event.detail)delta=0;if(event.preventDefault){event.preventDefault();event.returnValue=false}}return false}catch(err){return true}}
-</script>
+<div id="Container"
+     tal:define="file_url python: request.getURL(1)+'/preview';
+                 preview_url string:${context/++resource++filefield}/web/viewer.html?file=${file_url};
+                 print_enabled python: context.disablePrint and 'false' or 'true'">
+    <tal:block condition="python: context.mimeType not in ['image/gif', 'image/jpeg', 'image/png']">
 
-<script type="text/javascript"
-    tal:define="print_enabled python: context.disablePrint and 'false' or 'true'"
-    tal:content="string: var preview_url=$('HEAD').attr('base') + 'preview'; var viewer_url='${context/++resource++filefield/FlexPaperViewer.swf}'; var print_enabled=${print_enabled};">
-</script>
+        <iframe id="pdf-js-viewer" tal:attributes="src preview_url" title="webviewer" frameborder="0"></iframe>
 
-<script type="text/javascript">
-    <!-- For version detection, set to min. required Flash Player version, or 0 (or 0.0.0), for no version detection. -->
-    var swfVersionStr = "9.0.124";
-    <!-- To use express install, set to playerProductInstall.swf, otherwise the empty string. -->
-    var xiSwfUrlStr = "${expressInstallSwf}";
-    var flashvars = {
-        SwfFile: escape(preview_url),
-        Scale: 0.6,
-        ZoomTransition: "easeOut",
-        ZoomTime: 0.5,
-        ZoomInterval: 0.1,
-        FitPageOnLoad: false,
-        FitWidthOnLoad: true,
-        PrintEnabled: print_enabled,
-        FullScreenAsMaxWindow: true,
-        ProgressiveLoading: true,
-        localeChain: "en_US"
-    };
-
-    var params = {};
-    var attributes = {};
-
-    params.quality = "high";
-    params.bgcolor = "#ffffff";
-    params.allowfullscreen = "true";
-
-    attributes.id = "FlexPaperViewer";
-    attributes.name = "FlexPaperViewer";
-
-    swfobject.embedSWF(viewer_url, "flashContent", "100%", "100%", swfVersionStr, xiSwfUrlStr, flashvars, params, attributes);
-    swfobject.createCSS("#flashContent", "display:block;text-align:left;min-height:480px;");
-</script>
-
-<style>
-    html, body, #flashContent, #flashContainer { height: 100%; width: 100%; }
-    #flashContent, #flashContainer, #FlexPaperViewer { min-height: 480px; }
-</style>
-
-<div id="flashContainer">
-    <div id="flashContent">
-        <p i18n:translate="">
-            To view this page ensure that Adobe Flash Player version
-            9.0.124 or greater is installed.
-        </p>
-        <![CDATA[
+        <script type="text/javascript"
+            tal:content="string: var print_enabled=${print_enabled};">
+        </script>
         <script type="text/javascript">
-                var pageHost = ((document.location.protocol == "https:") ? "https://" : "http://");
-                document.write("<a href='http://www.adobe.com/go/getflashplayer'>Get Adobe Flash player</a>" );
-            </script>
-        ]]>
-    </div>
+            $(document).ready(function(){
+                $('#pdf-js-viewer').load(function() {
+                    if (print_enabled === true) {
+                        // NOTE: workaround to enable the print button
+                        $('#pdf-js-viewer').contents().find('#print').show();
+                    }
+                });
+            });
+        </script>
+    </tal:block>
+    <tal:block condition="python: context.mimeType in ['image/gif', 'image/jpeg', 'image/png']">
+        <img src="" tal:attributes="src python: request.getURL(1)+'/view.html'" style="width: 100%" />
+    </tal:block>
 </div>
+<style>
+    html, body, #Container, #pdf-js-viewer { height: 100%; width: 100%; }
+    #Container, #pdf-js-viewer { min-height: 480px; }
+</style>
