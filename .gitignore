@@ -22,7 +22,6 @@
 
 # folders
 bin/
-build/
 develop-eggs/
 dist/
 downloads/
