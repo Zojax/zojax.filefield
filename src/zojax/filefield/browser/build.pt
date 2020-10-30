@@ -5,6 +5,20 @@
     <p><b>Attention!</b> This operation is very resource-intensive.<br />
        <b>Note:</b> the previews are already generated for green items
     </p>
+    <div id="filterPreviews" style="padding-bottom: 5px;">
+      <h2>Search by Content Item Title:</h2>
+
+      <input type="text" name="form.searchText"
+         tal:attributes="value request/form.searchText|nothing" />
+
+      <input type="submit" class="z-form-standalonebtn"
+             name="form.button.search" value="Search" />
+      <input type="submit" class="z-form-cancelbutton"
+             name="form.search.clear" value="Clear"
+             tal:condition="request/form.searchText|nothing" />
+    </div>
+
+
     <tal:block content="structure batch/@@pagelet/batch.view" />
     <table class="z-table">
       <thead>

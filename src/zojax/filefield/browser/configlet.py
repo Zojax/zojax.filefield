@@ -106,9 +106,18 @@ class PreviewsCatalogBuildView(WizardStep):
         request = self.request
         context = removeAllProxies(self.context)
 
-        filefield_objects = self.catalog\
-            .searchResults(type={'any_of': self.f2c_mapping.keys()}) #,
-                           #sort_on='modified', sort_order='reverse')
+        if 'form.search.clear' in request:
+            self.redirect('./')
+            return
+
+        query = dict(type={'any_of': self.f2c_mapping.keys()})
+        # sort_order=sort_order, sort_on=sort_on )
+
+        search_text = request.form.get('form.searchText', None)
+        if search_text and 'form.search.clear' not in request:
+            query['searchableText'] = search_text
+
+        filefield_objects = self.catalog.searchResults(**query)
 
         if 'form.button.build' in request:
             for obj in filefield_objects:
@@ -125,8 +134,8 @@ class PreviewsCatalogBuildView(WizardStep):
             IStatusMessage(request).add(
                 _('Previews for selected files has been builded.'))
 
-        #results = [o for o in filefield_objects if self.previewsNotExists(o)]
-        #self.batch = Batch(results, size=20, context=context, request=request)
+        # results = [o for o in filefield_objects if self.previewsNotExists(o)]
+        # self.batch = Batch(results, size=20, context=context, request=request)
         self.batch = Batch(filefield_objects,
                            size=20, context=context, request=request)
 
@@ -135,9 +144,9 @@ class PreviewsCatalogBuildView(WizardStep):
         for f in file_fields:
             file = getattr(obj, f, None)
             if file and file.data:
-                #previews can re-build here
-                #if mode for preview catalog's mode switched in `check`
-                #lets set allow_auto_generate=False flag
+                # previews can re-build here
+                # if mode for preview catalog's mode switched in `check`
+                # lets set allow_auto_generate=False flag
                 if not self.preview_catalog.check(file,
                                                   allow_auto_generate=False):
                     return True
@@ -161,9 +170,9 @@ class PreviewsCatalogBuildView(WizardStep):
         for n, u in getUtilitiesFor(IContentType):
             for f in u.schema.names():
                 ifaces = list(interface.providedBy(u.schema[f]))
-                if IFileField in ifaces or IImageField in ifaces :
+                if IFileField in ifaces or IImageField in ifaces:
                     if n not in mapping:
-                        mapping[n]=[]
+                        mapping[n] = []
                     mapping[n].append(f)
 
         return mapping
